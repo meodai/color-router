@@ -69,8 +69,8 @@ export class ColorRouter {
   readonly #eventEmitter = new EventTarget();
   readonly #customFunctions = new Map<string, (...args: any[]) => string>();
   
-  private _ColorRenderer?: ColorRendererClass;
-  private _logCallback?: LogCallback;
+  #ColorRenderer?: ColorRendererClass;
+  #logCallback?: LogCallback;
 
   constructor(options: { mode?: 'auto' | 'batch' } = {}) {
     this.#mode = options.mode || 'auto';
@@ -83,7 +83,7 @@ export class ColorRouter {
       throw new PaletteError(`Function name "${name}" is reserved.`);
     }
     this.#customFunctions.set(name, fn);
-    if (this._logCallback) this._logCallback(`Registered function '${name}'.`);
+    if (this.#logCallback) this.#logCallback(`Registered function '${name}'.`);
   }
 
   func(name: string, ...args: any[]): ColorFunction {
@@ -103,8 +103,8 @@ export class ColorRouter {
       throw new PaletteError(`Base palette "${basePalette}" does not exist.`);
     }
     this.#palettes.set(name, { extends: basePalette, overrides });
-    if (this._logCallback) {
-      this._logCallback(`Palette '${name}' created${basePalette ? ` extending '${basePalette}'` : ''}.`);
+    if (this.#logCallback) {
+      this.#logCallback(`Palette '${name}' created${basePalette ? ` extending '${basePalette}'` : ''}.`);
     }
     
     // Apply overrides if provided
@@ -135,7 +135,7 @@ export class ColorRouter {
       const definition = this.getDefinitionForKey(key);
       this.define(`${targetName}.${shortKey}`, definition);
     }
-    if (this._logCallback) this._logCallback(`Copied palette '${sourceName}' to '${targetName}'.`);
+    if (this.#logCallback) this.#logCallback(`Copied palette '${sourceName}' to '${targetName}'.`);
   }
 
   deletePalette(name: string): void {
@@ -151,7 +151,7 @@ export class ColorRouter {
     }
     
     this.#palettes.delete(name);
-    if (this._logCallback) this._logCallback(`Deleted palette '${name}'.`);
+    if (this.#logCallback) this.#logCallback(`Deleted palette '${name}'.`);
   }
 
   // --- COLOR DEFINITION & MODIFICATION ---
@@ -179,7 +179,7 @@ export class ColorRouter {
     } else {
       this.#batchQueue.add(key);
     }
-    if (this._logCallback) this._logCallback(`Defined '${key}' = ${this.#valueToString(value)}`);
+    if (this.#logCallback) this.#logCallback(`Defined '${key}' = ${this.#valueToString(value)}`);
   }
   
   flush(): void {
@@ -198,7 +198,7 @@ export class ColorRouter {
     if (allChanges.length > 0) {
       this.#eventEmitter.dispatchEvent(new CustomEvent('change', { detail: allChanges }));
       this.#eventEmitter.dispatchEvent(new CustomEvent('batch-complete', { detail: allChanges }));
-      if (this._logCallback) this._logCallback(`Flush complete. ${allChanges.length} colors updated.`);
+      if (this.#logCallback) this.#logCallback(`Flush complete. ${allChanges.length} colors updated.`);
     }
     this.#batchQueue.clear();
   }
@@ -238,7 +238,15 @@ export class ColorRouter {
   
   #getDefinition(key: string): ColorDefinition {
     let [paletteName, colorName] = key.split('.');
+    const visitedPalettes = new Set<string>(); // Track visited palettes to prevent infinite loops
+    
     while (paletteName) {
+      // Check for circular palette inheritance
+      if (visitedPalettes.has(paletteName)) {
+        throw new CircularDependencyError([...visitedPalettes, paletteName]);
+      }
+      visitedPalettes.add(paletteName);
+      
       const currentKey = `${paletteName}.${colorName}`;
       if (this.#definitions.has(currentKey)) return this.#definitions.get(currentKey)!;
       const paletteConfig = this.#palettes.get(paletteName);
@@ -253,6 +261,9 @@ export class ColorRouter {
       try { 
         this.#resolveKey(key); 
       } catch (e) { 
+        if (this.#logCallback) {
+          this.#logCallback(`Failed to resolve '${key}': ${(e as Error).message}`);
+        }
         return 'invalid'; 
       }
     }
@@ -263,11 +274,20 @@ export class ColorRouter {
     const keys = new Set<string>();
     let current: string | undefined = paletteName;
     const paletteStack: string[] = [];
-    while (current && !paletteStack.includes(current)) {
+    const visitedPalettes = new Set<string>(); // Prevent infinite loops
+    
+    while (current && !visitedPalettes.has(current)) {
+      visitedPalettes.add(current);
       paletteStack.unshift(current);
       const palette = this.#palettes.get(current);
       current = palette?.extends;
     }
+    
+    // If we hit a visited palette, throw an error
+    if (current && visitedPalettes.has(current)) {
+      throw new CircularDependencyError([...visitedPalettes, current]);
+    }
+    
     for (const pName of paletteStack) {
       const prefix = `${pName}.`;
       for (const key of this.#definitions.keys()) {
@@ -326,15 +346,41 @@ export class ColorRouter {
       if (visited.has(key)) return;
       if (temp.has(key)) throw new CircularDependencyError([...temp, key]);
       temp.add(key);
-      (routerInstance.#dependents.get(key) || []).forEach(dep => { 
-        if (keys.includes(dep)) visit(dep); 
-      });
+      
+      const dependents = routerInstance.#dependents.get(key);
+      if (dependents) {
+        for (const dep of dependents) {
+          if (keys.includes(dep)) {
+            visit(dep);
+          }
+        }
+      }
+      
       temp.delete(key);
       visited.add(key);
       sorted.push(key);
     };
+    
     for (const key of keys) { 
-      if (!visited.has(key)) visit(key); 
+      if (!visited.has(key)) {
+        try {
+          visit(key);
+        } catch (e) {
+          if (e instanceof CircularDependencyError) {
+            // Log the circular dependency but continue with other keys
+            if (this.#logCallback) {
+              this.#logCallback(`Circular dependency detected for '${key}': ${e.message}`);
+            }
+            // Add the key anyway to prevent infinite loops
+            if (!visited.has(key)) {
+              visited.add(key);
+              sorted.push(key);
+            }
+          } else {
+            throw e; // Re-throw non-circular dependency errors
+          }
+        }
+      }
     }
     return sorted;
   }
@@ -342,7 +388,15 @@ export class ColorRouter {
   // --- UTILITY & HELPER FUNCTIONS ---
   has(key: string): boolean {
     let [pName, cName] = key.split('.');
+    const visitedPalettes = new Set<string>(); // Prevent infinite loops
+    
     while (pName) {
+      // Check for circular palette inheritance
+      if (visitedPalettes.has(pName)) {
+        throw new CircularDependencyError([...visitedPalettes, pName]);
+      }
+      visitedPalettes.add(pName);
+      
       if (this.#definitions.has(`${pName}.${cName}`)) return true;
       const pConfig = this.#palettes.get(pName);
       if (!pConfig || !pConfig.extends) break;
@@ -541,10 +595,6 @@ export class ColorRouter {
     return this.#getAllPaletteKeys(paletteName);
   }
 
-  getDefinitionForKey(key: string): ColorDefinition {
-    return this.#getDefinition(key);
-  }
-
   valueToString(value: ColorDefinition): string {
     return this.#valueToString(value);
   }
@@ -578,13 +628,18 @@ export class ColorRouter {
     return graph;
   }
 
-  // --- INTERNAL ACCESSORS FOR RENDERER ---
-  _getDefinition(key: string): ColorDefinition {
-    return this.#getDefinition(key);
+  // --- RENDERER INTEGRATION METHODS ---
+  // These methods provide controlled access to internal state for renderers
+  getDefinitionForKey(key: string): ColorDefinition {
+    try {
+      return this.#getDefinition(key);
+    } catch (e) {
+      throw new PaletteError(`Failed to get definition for key '${key}': ${(e as Error).message}`);
+    }
   }
 
-  _getCustomFunctions(): Map<string, (...args: any[]) => string> {
-    return this.#customFunctions;
+  getCustomFunctions(): ReadonlyMap<string, (...args: any[]) => string> {
+    return new Map(this.#customFunctions);
   }
 
   getPaletteDependencies(paletteName: string): string[] {
@@ -618,24 +673,19 @@ export class ColorRouter {
   // --- RENDERER ACCESS ---
   createRenderer(format?: 'css-variables' | 'scss' | 'json'): any {
     // ColorRenderer will be injected from the main module to avoid circular imports
-    if (!this._ColorRenderer) {
+    if (!this.#ColorRenderer) {
       throw new Error('ColorRenderer class not injected. Please call setColorRenderer() first.');
     }
-    return new this._ColorRenderer(this, format);
+    return new this.#ColorRenderer(this, format);
   }
   
   // Method to inject ColorRenderer class to avoid circular imports
   setColorRenderer(ColorRenderer: ColorRendererClass): void {
-    this._ColorRenderer = ColorRenderer;
+    this.#ColorRenderer = ColorRenderer;
   }
   
   // Method to set logging callback for UI integration
   setLogCallback(callback: LogCallback): void {
-    this._logCallback = callback;
-  }
-  
-  // Legacy render method for backwards compatibility
-  render(format: 'css-variables' | 'scss' | 'json' = 'css-variables'): string {
-    return this.createRenderer(format).render();
+    this.#logCallback = callback;
   }
 }

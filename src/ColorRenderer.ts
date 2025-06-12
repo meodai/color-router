@@ -107,7 +107,7 @@ export class ColorRenderer {
     }
 
     // Find the function name
-    const functionName = [...this.#router._getCustomFunctions().entries()]
+    const functionName = [...this.#router.getCustomFunctions().entries()]
       .find(([_, fn]) => fn === colorFunction.fn)?.[0] || 'unknown';
 
     const renderer = formatRenderers.get(functionName);
@@ -151,7 +151,7 @@ export class ColorRenderer {
 
     let output = '';
     for (const key of keys) {
-      const definition = this.#router._getDefinition(key);
+      const definition = this.#router.getDefinitionForKey(key);
       const value = this.#renderValue(definition, key);
       
       if (this.#format === 'css-variables') {

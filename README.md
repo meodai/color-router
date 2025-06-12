@@ -41,7 +41,9 @@ router.define('base.text', router.ref('base.primary'));
 router.define('base.background', router.func('bestContrastWith', 'base.text', 'base')); // Enhanced: search base palette
 
 // Get rendered colors
-const cssVars = router.render('css-variables');
+// Get CSS variables output
+const renderer = router.createRenderer('css-variables');
+const cssVars = renderer.render();
 console.log(cssVars);
 // Output: --base-primary: #3498db; --base-secondary: #2ecc71; --base-text: #3498db; --base-background: #ffffff;
 ```

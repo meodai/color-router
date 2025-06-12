@@ -1,15 +1,15 @@
-var z = (a) => {
-  throw TypeError(a);
+var ct = (d) => {
+  throw TypeError(d);
 };
-var j = (a, t, e) => t.has(a) || z("Cannot " + e);
-var n = (a, t, e) => (j(a, t, "read from private field"), e ? e.call(a) : t.get(a)), p = (a, t, e) => t.has(a) ? z("Cannot add the same private member more than once") : t instanceof WeakSet ? t.add(a) : t.set(a, e), E = (a, t, e, s) => (j(a, t, "write to private field"), s ? s.call(a, e) : t.set(a, e), e), h = (a, t, e) => (j(a, t, "access private method"), e);
-import { parse as F, formatHex as _, wcagContrast as v, interpolate as tt, converter as B } from "culori";
-class S {
+var Z = (d, t, e) => t.has(d) || ct("Cannot " + e);
+var r = (d, t, e) => (Z(d, t, "read from private field"), e ? e.call(d) : t.get(d)), g = (d, t, e) => t.has(d) ? ct("Cannot add the same private member more than once") : t instanceof WeakSet ? t.add(d) : t.set(d, e), A = (d, t, e, s) => (Z(d, t, "write to private field"), s ? s.call(d, e) : t.set(d, e), e), f = (d, t, e) => (Z(d, t, "access private method"), e);
+import { parse as K, formatHex as Y, wcagContrast as L, interpolate as Ct, converter as at } from "culori";
+class J {
   constructor(t) {
     this.key = t, this.type = Symbol.for("ColorReference");
   }
 }
-class M {
+class Q {
   constructor(t, e, s) {
     this.fn = t, this.args = e, this.dependencies = s, this.type = Symbol.for("ColorFunction");
   }
@@ -20,469 +20,711 @@ class M {
     return this.fn(...e);
   }
 }
-class $ extends Error {
+class C extends Error {
   constructor(t) {
     super(t), this.name = "PaletteError";
   }
 }
-class I extends Error {
+class U extends Error {
   constructor(t) {
     super(`Circular dependency detected: ${t.join(" -> ")}`), this.path = t, this.name = "CircularDependencyError";
   }
 }
-var u, m, C, y, b, x, R, P, k, c, V, U, D, K, J, L, Q, G, q, T, X, H, Y;
-class rt {
+var x, T, S, j, R, O, G, B, W, I, $, l, tt, ht, q, et, lt, ft, dt, ut, pt, st, gt, nt, $t;
+class At {
   constructor(t = {}) {
-    p(this, c);
-    p(this, u, /* @__PURE__ */ new Map());
-    p(this, m, /* @__PURE__ */ new Map());
-    p(this, C, /* @__PURE__ */ new Map());
-    p(this, y, /* @__PURE__ */ new Map());
-    p(this, b, /* @__PURE__ */ new Map());
-    p(this, x, "auto");
-    p(this, R, /* @__PURE__ */ new Set());
-    p(this, P, new EventTarget());
-    p(this, k, /* @__PURE__ */ new Map());
-    E(this, x, t.mode || "auto"), h(this, c, Y).call(this);
+    g(this, l);
+    g(this, x, /* @__PURE__ */ new Map());
+    g(this, T, /* @__PURE__ */ new Map());
+    g(this, S, /* @__PURE__ */ new Map());
+    g(this, j, /* @__PURE__ */ new Map());
+    g(this, R, /* @__PURE__ */ new Map());
+    g(this, O, "auto");
+    g(this, G, /* @__PURE__ */ new Set());
+    g(this, B, new EventTarget());
+    g(this, W, /* @__PURE__ */ new Map());
+    g(this, I);
+    g(this, $);
+    A(this, O, t.mode || "auto"), f(this, l, $t).call(this);
   }
   // --- CUSTOM FUNCTIONS ---
   registerFunction(t, e) {
     if (this[t] || t === "ref" || t === "func")
-      throw new $(`Function name "${t}" is reserved.`);
-    n(this, k).set(t, e), this._logCallback && this._logCallback(`Registered function '${t}'.`);
+      throw new C(`Function name "${t}" is reserved.`);
+    r(this, W).set(t, e), r(this, $) && r(this, $).call(this, `Registered function '${t}'.`);
   }
   func(t, ...e) {
-    if (!n(this, k).has(t))
-      throw new $(`Custom function "${t}" is not registered.`);
-    const s = n(this, k).get(t), r = e.filter((i) => typeof i == "string" && i.includes("."));
-    return new M(s, e, r);
+    if (!r(this, W).has(t))
+      throw new C(`Custom function "${t}" is not registered.`);
+    const s = r(this, W).get(t), o = e.filter((n) => typeof n == "string" && n.includes("."));
+    return new Q(s, e, o);
   }
   // --- PALETTE MANAGEMENT ---
   createPalette(t, e = {}) {
-    const { extends: s, overrides: r = {} } = e;
-    if (n(this, u).has(t)) throw new $(`Palette "${t}" already exists.`);
-    if (s && !n(this, u).has(s))
-      throw new $(`Base palette "${s}" does not exist.`);
-    if (n(this, u).set(t, { extends: s, overrides: r }), this._logCallback && this._logCallback(`Palette '${t}' created${s ? ` extending '${s}'` : ""}.`), s && Object.keys(r).length > 0)
-      for (const [i, o] of Object.entries(r))
-        this.define(`${t}.${i}`, o);
+    const { extends: s, overrides: o = {} } = e;
+    if (r(this, x).has(t)) throw new C(`Palette "${t}" already exists.`);
+    if (s && !r(this, x).has(s))
+      throw new C(`Base palette "${s}" does not exist.`);
+    if (r(this, x).set(t, { extends: s, overrides: o }), r(this, $) && r(this, $).call(this, `Palette '${t}' created${s ? ` extending '${s}'` : ""}.`), s && Object.keys(o).length > 0)
+      for (const [n, i] of Object.entries(o))
+        this.define(`${t}.${n}`, i);
   }
   extendPalette(t, e, s = {}) {
     return this.createPalette(t, { extends: e, overrides: s });
   }
   copyPalette(t, e) {
-    if (!n(this, u).has(t))
-      throw new $(`Source palette "${t}" does not exist.`);
-    if (n(this, u).has(e))
-      throw new $(`Target palette "${e}" already exists.`);
+    if (!r(this, x).has(t))
+      throw new C(`Source palette "${t}" does not exist.`);
+    if (r(this, x).has(e))
+      throw new C(`Target palette "${e}" already exists.`);
     const s = this.getAllKeysForPalette(t);
     this.createPalette(e);
-    for (const r of s) {
-      const i = r.split(".").slice(1).join("."), o = this.getDefinitionForKey(r);
-      this.define(`${e}.${i}`, o);
+    for (const o of s) {
+      const n = o.split(".").slice(1).join("."), i = this.getDefinitionForKey(o);
+      this.define(`${e}.${n}`, i);
     }
-    this._logCallback && this._logCallback(`Copied palette '${t}' to '${e}'.`);
+    r(this, $) && r(this, $).call(this, `Copied palette '${t}' to '${e}'.`);
   }
   deletePalette(t) {
-    if (!n(this, u).has(t)) throw new $(`Palette "${t}" does not exist.`);
+    if (!r(this, x).has(t)) throw new C(`Palette "${t}" does not exist.`);
     const e = this.getAllKeysForPalette(t);
     for (const s of e)
-      n(this, m).delete(s), n(this, C).delete(s), n(this, y).delete(s), n(this, b).delete(s);
-    n(this, u).delete(t), this._logCallback && this._logCallback(`Deleted palette '${t}'.`);
+      r(this, T).delete(s), r(this, S).delete(s), r(this, j).delete(s), r(this, R).delete(s);
+    r(this, x).delete(t), r(this, $) && r(this, $).call(this, `Deleted palette '${t}'.`);
   }
   // --- COLOR DEFINITION & MODIFICATION ---
   define(t, e) {
     const [s] = t.split(".");
-    if (!n(this, u).has(s))
-      throw new $(`Palette "${s}" does not exist. Create it first.`);
-    h(this, c, V).call(this, t, e);
+    if (!r(this, x).has(s))
+      throw new C(`Palette "${s}" does not exist. Create it first.`);
+    f(this, l, tt).call(this, t, e);
   }
   set(t, e) {
-    if (!this.has(t)) throw new $(`Color "${t}" is not defined. Use .define() first.`);
-    h(this, c, V).call(this, t, e);
+    if (!this.has(t)) throw new C(`Color "${t}" is not defined. Use .define() first.`);
+    f(this, l, tt).call(this, t, e);
   }
   flush() {
-    if (n(this, x) !== "batch") return;
-    const t = h(this, c, q).call(this, Array.from(n(this, R))), e = [];
+    if (r(this, O) !== "batch") return;
+    const t = f(this, l, pt).call(this, Array.from(r(this, G))), e = [];
     for (const s of t) {
-      const r = n(this, C).get(s);
-      h(this, c, D).call(this, s);
-      const i = n(this, C).get(s);
-      r !== i && (e.push({ key: s, oldValue: r, newValue: i }), h(this, c, H).call(this, s, i, r));
+      const o = r(this, S).get(s);
+      f(this, l, q).call(this, s);
+      const n = r(this, S).get(s);
+      o !== n && (e.push({ key: s, oldValue: o, newValue: n }), f(this, l, nt).call(this, s, n, o));
     }
-    e.length > 0 && (n(this, P).dispatchEvent(new CustomEvent("change", { detail: e })), n(this, P).dispatchEvent(new CustomEvent("batch-complete", { detail: e })), this._logCallback && this._logCallback(`Flush complete. ${e.length} colors updated.`)), n(this, R).clear();
+    e.length > 0 && (r(this, B).dispatchEvent(new CustomEvent("change", { detail: e })), r(this, B).dispatchEvent(new CustomEvent("batch-complete", { detail: e })), r(this, $) && r(this, $).call(this, `Flush complete. ${e.length} colors updated.`)), r(this, G).clear();
   }
   resolve(t) {
-    if (!n(this, C).has(t))
+    if (!r(this, S).has(t))
       try {
-        h(this, c, D).call(this, t);
-      } catch {
-        return "invalid";
+        f(this, l, q).call(this, t);
+      } catch (e) {
+        return r(this, $) && r(this, $).call(this, `Failed to resolve '${t}': ${e.message}`), "invalid";
       }
-    return n(this, C).get(t);
+    return r(this, S).get(t);
   }
   // --- UTILITY & HELPER FUNCTIONS ---
   has(t) {
     let [e, s] = t.split(".");
+    const o = /* @__PURE__ */ new Set();
     for (; e; ) {
-      if (n(this, m).has(`${e}.${s}`)) return !0;
-      const r = n(this, u).get(e);
-      if (!r || !r.extends) break;
-      e = r.extends;
+      if (o.has(e))
+        throw new U([...o, e]);
+      if (o.add(e), r(this, T).has(`${e}.${s}`)) return !0;
+      const n = r(this, x).get(e);
+      if (!n || !n.extends) break;
+      e = n.extends;
     }
     return !1;
   }
   on(t, e) {
-    n(this, P).addEventListener(t, e);
+    r(this, B).addEventListener(t, e);
   }
   watch(t, e) {
     this.on(`watch:${t}`, (s) => {
-      const r = s;
-      e(r.detail.newValue, r.detail.oldValue);
+      const o = s;
+      e(o.detail.newValue, o.detail.oldValue);
     });
   }
   // --- PUBLIC API FOR REFERENCES & BUILT-IN FUNCTIONS ---
   ref(t) {
-    return new S(t);
+    return new J(t);
   }
   // --- PUBLIC GETTERS FOR UI ---
   getAllPalettes() {
-    return Array.from(n(this, u).entries()).map(([t, e]) => ({ name: t, config: e }));
+    return Array.from(r(this, x).entries()).map(([t, e]) => ({ name: t, config: e }));
   }
   getAllKeysForPalette(t) {
-    return h(this, c, J).call(this, t);
-  }
-  getDefinitionForKey(t) {
-    return h(this, c, K).call(this, t);
+    return f(this, l, lt).call(this, t);
   }
   valueToString(t) {
-    return h(this, c, T).call(this, t);
+    return f(this, l, st).call(this, t);
   }
   get mode() {
-    return n(this, x);
+    return r(this, O);
   }
   set mode(t) {
-    E(this, x, t);
+    A(this, O, t);
   }
   get batchQueueSize() {
-    return n(this, R).size;
+    return r(this, G).size;
   }
   // --- DEPENDENCY ANALYSIS ---
   getDependencies(t) {
-    return Array.from(n(this, b).get(t) || []);
+    return Array.from(r(this, R).get(t) || []);
   }
   getDependents(t) {
-    return Array.from(n(this, y).get(t) || []);
+    return Array.from(r(this, j).get(t) || []);
   }
   getConnectionGraph() {
     const t = {};
-    for (const [e, s] of n(this, b).entries())
+    for (const [e, s] of r(this, R).entries())
       t[e] = Array.from(s);
     return t;
   }
-  // --- INTERNAL ACCESSORS FOR RENDERER ---
-  _getDefinition(t) {
-    return h(this, c, K).call(this, t);
+  // --- RENDERER INTEGRATION METHODS ---
+  // These methods provide controlled access to internal state for renderers
+  getDefinitionForKey(t) {
+    try {
+      return f(this, l, et).call(this, t);
+    } catch (e) {
+      throw new C(`Failed to get definition for key '${t}': ${e.message}`);
+    }
   }
-  _getCustomFunctions() {
-    return n(this, k);
+  getCustomFunctions() {
+    return new Map(r(this, W));
   }
   getPaletteDependencies(t) {
     const e = this.getAllKeysForPalette(t), s = /* @__PURE__ */ new Set();
-    for (const r of e) {
-      const i = this.getDependencies(r);
-      for (const o of i)
-        o.startsWith(`${t}.`) || s.add(o);
+    for (const o of e) {
+      const n = this.getDependencies(o);
+      for (const i of n)
+        i.startsWith(`${t}.`) || s.add(i);
     }
     return Array.from(s);
   }
   resolvePalette(t) {
     const e = this.getAllKeysForPalette(t), s = {};
-    for (const r of e) {
-      const i = r.split(".").slice(1).join(".");
-      s[i] = this.resolve(r);
+    for (const o of e) {
+      const n = o.split(".").slice(1).join(".");
+      s[n] = this.resolve(o);
     }
     return s;
   }
   // --- RENDERER ACCESS ---
   createRenderer(t) {
-    if (!this._ColorRenderer)
+    if (!r(this, I))
       throw new Error("ColorRenderer class not injected. Please call setColorRenderer() first.");
-    return new this._ColorRenderer(this, t);
+    return new (r(this, I))(this, t);
   }
   // Method to inject ColorRenderer class to avoid circular imports
   setColorRenderer(t) {
-    this._ColorRenderer = t;
+    A(this, I, t);
   }
   // Method to set logging callback for UI integration
   setLogCallback(t) {
-    this._logCallback = t;
-  }
-  // Legacy render method for backwards compatibility
-  render(t = "css-variables") {
-    return this.createRenderer(t).render();
+    A(this, $, t);
   }
 }
-u = new WeakMap(), m = new WeakMap(), C = new WeakMap(), y = new WeakMap(), b = new WeakMap(), x = new WeakMap(), R = new WeakMap(), P = new WeakMap(), k = new WeakMap(), c = new WeakSet(), V = function(t, e) {
-  if (typeof e == "string" && !F(e))
-    throw new $(`Invalid color value: "${e}". Must be a valid CSS color or a router function.`);
-  n(this, m).set(t, e), h(this, c, L).call(this, t, e), n(this, x) === "auto" ? h(this, c, U).call(this, t) : n(this, R).add(t), this._logCallback && this._logCallback(`Defined '${t}' = ${h(this, c, T).call(this, e)}`);
+x = new WeakMap(), T = new WeakMap(), S = new WeakMap(), j = new WeakMap(), R = new WeakMap(), O = new WeakMap(), G = new WeakMap(), B = new WeakMap(), W = new WeakMap(), I = new WeakMap(), $ = new WeakMap(), l = new WeakSet(), tt = function(t, e) {
+  if (typeof e == "string" && !K(e))
+    throw new C(`Invalid color value: "${e}". Must be a valid CSS color or a router function.`);
+  r(this, T).set(t, e), f(this, l, ft).call(this, t, e), r(this, O) === "auto" ? f(this, l, ht).call(this, t) : r(this, G).add(t), r(this, $) && r(this, $).call(this, `Defined '${t}' = ${f(this, l, st).call(this, e)}`);
 }, // --- RESOLUTION & REACTIVITY ---
-U = function(t) {
-  const e = h(this, c, G).call(this, t), s = [];
-  for (const r of e) {
-    const i = n(this, C).get(r);
-    h(this, c, D).call(this, r);
-    const o = n(this, C).get(r);
-    i !== o && (s.push({ key: r, oldValue: i, newValue: o }), h(this, c, H).call(this, r, o, i));
+ht = function(t) {
+  const e = f(this, l, ut).call(this, t), s = [];
+  for (const o of e) {
+    const n = r(this, S).get(o);
+    f(this, l, q).call(this, o);
+    const i = r(this, S).get(o);
+    n !== i && (s.push({ key: o, oldValue: n, newValue: i }), f(this, l, nt).call(this, o, i, n));
   }
-  s.length > 0 && n(this, P).dispatchEvent(new CustomEvent("change", { detail: s }));
-}, D = function(t, e = []) {
-  if (e.includes(t)) throw new I([...e, t]);
-  const s = h(this, c, K).call(this, t);
-  let r;
-  return s instanceof S ? r = h(this, c, D).call(this, s.key, [...e, t]) : s instanceof M ? r = s.execute(this) : r = h(this, c, X).call(this, s), n(this, C).set(t, r), r;
-}, K = function(t) {
+  s.length > 0 && r(this, B).dispatchEvent(new CustomEvent("change", { detail: s }));
+}, q = function(t, e = []) {
+  if (e.includes(t)) throw new U([...e, t]);
+  const s = f(this, l, et).call(this, t);
+  let o;
+  return s instanceof J ? o = f(this, l, q).call(this, s.key, [...e, t]) : s instanceof Q ? o = s.execute(this) : o = f(this, l, gt).call(this, s), r(this, S).set(t, o), o;
+}, et = function(t) {
   let [e, s] = t.split(".");
+  const o = /* @__PURE__ */ new Set();
   for (; e; ) {
-    const r = `${e}.${s}`;
-    if (n(this, m).has(r)) return n(this, m).get(r);
-    const i = n(this, u).get(e);
+    if (o.has(e))
+      throw new U([...o, e]);
+    o.add(e);
+    const n = `${e}.${s}`;
+    if (r(this, T).has(n)) return r(this, T).get(n);
+    const i = r(this, x).get(e);
     if (!i || !i.extends) break;
     e = i.extends;
   }
-  throw new $(`Color '${t}' not found in palette hierarchy.`);
-}, J = function(t) {
+  throw new C(`Color '${t}' not found in palette hierarchy.`);
+}, lt = function(t) {
   const e = /* @__PURE__ */ new Set();
   let s = t;
-  const r = [];
-  for (; s && !r.includes(s); ) {
-    r.unshift(s);
-    const i = n(this, u).get(s);
+  const o = [], n = /* @__PURE__ */ new Set();
+  for (; s && !n.has(s); ) {
+    n.add(s), o.unshift(s);
+    const i = r(this, x).get(s);
     s = i == null ? void 0 : i.extends;
   }
-  for (const i of r) {
-    const o = `${i}.`;
-    for (const l of n(this, m).keys())
-      l.startsWith(o) && e.add(l.split(".").slice(1).join("."));
+  if (s && n.has(s))
+    throw new U([...n, s]);
+  for (const i of o) {
+    const c = `${i}.`;
+    for (const a of r(this, T).keys())
+      a.startsWith(c) && e.add(a.split(".").slice(1).join("."));
   }
   return Array.from(e).map((i) => `${t}.${i}`);
 }, // --- DEPENDENCY GRAPH ---
-L = function(t, e) {
-  var r;
-  if (n(this, b).has(t))
-    for (const i of n(this, b).get(t))
-      (r = n(this, y).get(i)) == null || r.delete(t);
-  n(this, b).set(t, /* @__PURE__ */ new Set());
-  const s = h(this, c, Q).call(this, e);
-  for (const i of s)
-    n(this, y).has(i) || n(this, y).set(i, /* @__PURE__ */ new Set()), n(this, y).get(i).add(t), n(this, b).get(t).add(i);
-}, Q = function(t) {
-  return t instanceof S ? [t.key] : t instanceof M ? t.dependencies : [];
-}, G = function(t) {
-  const e = /* @__PURE__ */ new Set(), s = [], r = this;
-  function i(o) {
-    e.has(o) || (e.add(o), (n(r, y).get(o) || []).forEach(i), s.push(o));
+ft = function(t, e) {
+  var o;
+  if (r(this, R).has(t))
+    for (const n of r(this, R).get(t))
+      (o = r(this, j).get(n)) == null || o.delete(t);
+  r(this, R).set(t, /* @__PURE__ */ new Set());
+  const s = f(this, l, dt).call(this, e);
+  for (const n of s)
+    r(this, j).has(n) || r(this, j).set(n, /* @__PURE__ */ new Set()), r(this, j).get(n).add(t), r(this, R).get(t).add(n);
+}, dt = function(t) {
+  return t instanceof J ? [t.key] : t instanceof Q ? t.dependencies : [];
+}, ut = function(t) {
+  const e = /* @__PURE__ */ new Set(), s = [], o = this;
+  function n(i) {
+    e.has(i) || (e.add(i), (r(o, j).get(i) || []).forEach(n), s.push(i));
   }
-  return i(t), s.reverse();
-}, q = function(t) {
-  const e = [], s = /* @__PURE__ */ new Set(), r = /* @__PURE__ */ new Set(), i = this, o = (l) => {
-    if (!s.has(l)) {
-      if (r.has(l)) throw new I([...r, l]);
-      r.add(l), (n(i, b).get(l) || []).forEach((d) => {
-        t.includes(d) && o(d);
-      }), r.delete(l), s.add(l), e.push(l);
-    }
+  return n(t), s.reverse();
+}, pt = function(t) {
+  const e = [], s = /* @__PURE__ */ new Set(), o = /* @__PURE__ */ new Set(), n = this, i = (c) => {
+    if (s.has(c)) return;
+    if (o.has(c)) throw new U([...o, c]);
+    o.add(c);
+    const a = r(n, R).get(c);
+    if (a)
+      for (const u of a)
+        t.includes(u) && i(u);
+    o.delete(c), s.add(c), e.push(c);
   };
-  for (const l of t)
-    s.has(l) || o(l);
+  for (const c of t)
+    if (!s.has(c))
+      try {
+        i(c);
+      } catch (a) {
+        if (a instanceof U)
+          r(this, $) && r(this, $).call(this, `Circular dependency detected for '${c}': ${a.message}`), s.has(c) || (s.add(c), e.push(c));
+        else
+          throw a;
+      }
   return e;
-}, T = function(t) {
+}, st = function(t) {
   var e;
-  if (t instanceof S) return `ref('${t.key}')`;
-  if (t instanceof M) {
-    const s = ((e = [...n(this, k).entries()].find(([i, o]) => o === t.fn)) == null ? void 0 : e[0]) || t.fn.name.replace("bound ", ""), r = t.args.map((i) => typeof i == "string" ? `'${i}'` : i).join(", ");
-    return `${s}(${r})`;
+  if (t instanceof J) return `ref('${t.key}')`;
+  if (t instanceof Q) {
+    const s = ((e = [...r(this, W).entries()].find(([n, i]) => i === t.fn)) == null ? void 0 : e[0]) || t.fn.name.replace("bound ", ""), o = t.args.map((n) => typeof n == "string" ? `'${n}'` : n).join(", ");
+    return `${s}(${o})`;
   }
   return `'${t}'`;
-}, X = function(t) {
-  const e = F(t);
-  return e ? _(e) : "#00000000";
-}, H = function(t, e, s) {
-  n(this, P).dispatchEvent(new CustomEvent(`watch:${t}`, {
+}, gt = function(t) {
+  const e = K(t);
+  return e ? Y(e) : "#00000000";
+}, nt = function(t, e, s) {
+  r(this, B).dispatchEvent(new CustomEvent(`watch:${t}`, {
     detail: { newValue: e, oldValue: s }
   }));
 }, // Register built-in functions during construction
-Y = function() {
+$t = function() {
   this.registerFunction("bestContrastWith", (t, e) => {
-    if (!F(t)) return "#000000";
+    if (!K(t)) return "#000000";
     if (!e)
-      return v("#fff", t) >= v("#000", t) ? "#ffffff" : "#000000";
-    if (!n(this, u).has(e))
-      return console.warn(`Palette "${e}" not found, falling back to black/white`), v("#fff", t) >= v("#000", t) ? "#ffffff" : "#000000";
+      return L("#fff", t) >= L("#000", t) ? "#ffffff" : "#000000";
+    if (!r(this, x).has(e))
+      return console.warn(`Palette "${e}" not found, falling back to black/white`), L("#fff", t) >= L("#000", t) ? "#ffffff" : "#000000";
     const s = this.getAllKeysForPalette(e);
     if (s.length === 0)
-      return console.warn(`Palette "${e}" has no colors, falling back to black/white`), v("#fff", t) >= v("#000", t) ? "#ffffff" : "#000000";
-    let r = null, i = 0;
-    for (const o of s)
+      return console.warn(`Palette "${e}" has no colors, falling back to black/white`), L("#fff", t) >= L("#000", t) ? "#ffffff" : "#000000";
+    let o = null, n = 0;
+    for (const i of s)
       try {
-        const l = this.resolve(o);
-        if (l && l !== "invalid") {
-          const d = v(l, t);
-          d > i && (i = d, r = l);
+        const c = this.resolve(i);
+        if (c && c !== "invalid") {
+          const a = L(c, t);
+          a > n && (n = a, o = c);
         }
       } catch {
         continue;
       }
-    if (r)
-      return r;
-    for (const o of s)
+    if (o)
+      return o;
+    for (const i of s)
       try {
-        const l = this.resolve(o);
-        if (l && l !== "invalid")
-          return l;
+        const c = this.resolve(i);
+        if (c && c !== "invalid")
+          return c;
       } catch {
         continue;
       }
     return "#000000";
-  }), this.registerFunction("colorMix", (t, e, s = "50%", r = "lab") => {
+  }), this.registerFunction("colorMix", (t, e, s = "50%", o = "lab") => {
     try {
-      const i = F(t), o = F(e);
-      if (!i || !o) return t;
-      const l = tt([i, o], r), d = parseFloat(s) / 100;
-      return _(l(d));
+      const n = K(t), i = K(e);
+      if (!n || !i) return t;
+      const c = Ct([n, i], o), a = parseFloat(s) / 100;
+      return Y(c(a));
     } catch {
       return t;
     }
   }), this.registerFunction("relativeTo", (t, e) => {
     try {
-      const s = F(t);
+      const s = K(t);
       if (!s) return t;
       if (e.includes("/ 0.8")) {
-        const r = { ...s, alpha: 0.8 };
-        return _(r);
+        const o = { ...s, alpha: 0.8 };
+        return Y(o);
       }
-      return _(s);
+      return Y(s);
     } catch {
       return t;
     }
   }), this.registerFunction("minContrastWith", (t, e = 1.5) => {
-    if (!F(t)) return "#000000";
-    const s = v("#fff", t), r = v("#000", t);
-    return s >= e ? "#ffffff" : r >= e ? "#000000" : s >= r ? "#ffffff" : "#000000";
+    if (!K(t)) return "#000000";
+    const s = L("#fff", t), o = L("#000", t);
+    return s >= e ? "#ffffff" : o >= e ? "#000000" : s >= o ? "#ffffff" : "#000000";
   }), this.registerFunction("lighten", (t, e) => {
     try {
-      const s = F(t);
+      const s = K(t);
       if (!s) return t;
-      const i = B("hsl")(s);
-      return i && typeof i.l == "number" ? (i.l = Math.min(1, i.l + e), _(i)) : t;
+      const n = at("hsl")(s);
+      return n && typeof n.l == "number" ? (n.l = Math.min(1, n.l + e), Y(n)) : t;
     } catch {
       return t;
     }
   }), this.registerFunction("darken", (t, e) => {
     try {
-      const s = F(t);
+      const s = K(t);
       if (!s) return t;
-      const i = B("hsl")(s);
-      return i && typeof i.l == "number" ? (i.l = Math.max(0, i.l - e), _(i)) : t;
+      const n = at("hsl")(s);
+      return n && typeof n.l == "number" ? (n.l = Math.max(0, n.l - e), Y(n)) : t;
     } catch {
       return t;
     }
   });
 };
-var g, f, A, w, O, Z, W, N;
-class nt {
+var P, y, X, M, ot, wt, rt, yt;
+class Mt {
   constructor(t, e = "css-variables") {
-    p(this, w);
-    p(this, g);
-    p(this, f);
-    p(this, A, /* @__PURE__ */ new Map());
-    E(this, g, t), E(this, f, e === "css" ? "css-variables" : e), h(this, w, O).call(this);
+    g(this, M);
+    g(this, P);
+    g(this, y);
+    g(this, X, /* @__PURE__ */ new Map());
+    A(this, P, t), A(this, y, e === "css" ? "css-variables" : e), f(this, M, ot).call(this);
   }
   // Register a custom function renderer for this format
   registerFunctionRenderer(t, e) {
-    n(this, A).has(n(this, f)) || n(this, A).set(n(this, f), /* @__PURE__ */ new Map()), n(this, A).get(n(this, f)).set(t, e);
+    r(this, X).has(r(this, y)) || r(this, X).set(r(this, y), /* @__PURE__ */ new Map()), r(this, X).get(r(this, y)).set(t, e);
   }
   // Main render method
   render() {
     const t = /* @__PURE__ */ new Set();
-    n(this, g).getAllPalettes().forEach(({ name: r }) => {
-      n(this, g).getAllKeysForPalette(r).forEach((i) => t.add(i));
+    r(this, P).getAllPalettes().forEach(({ name: o }) => {
+      r(this, P).getAllKeysForPalette(o).forEach((n) => t.add(n));
     });
     const e = Array.from(t).sort();
-    if (n(this, f) === "json") {
-      const r = {};
-      for (const i of e)
-        r[i] = n(this, g).resolve(i);
-      return JSON.stringify(r, null, 2);
+    if (r(this, y) === "json") {
+      const o = {};
+      for (const n of e)
+        o[n] = r(this, P).resolve(n);
+      return JSON.stringify(o, null, 2);
     }
     let s = "";
-    for (const r of e) {
-      const i = n(this, g)._getDefinition(r), o = h(this, w, Z).call(this, i, r);
-      n(this, f) === "css-variables" ? s += `  --${r.replace(/\./g, "-")}: ${o};
-` : n(this, f) === "scss" && (s += `$${r.replace(/\./g, "-")}: ${o};
+    for (const o of e) {
+      const n = r(this, P).getDefinitionForKey(o), i = f(this, M, wt).call(this, n, o);
+      r(this, y) === "css-variables" ? s += `  --${o.replace(/\./g, "-")}: ${i};
+` : r(this, y) === "scss" && (s += `$${o.replace(/\./g, "-")}: ${i};
 `);
     }
-    return n(this, f) === "css-variables" ? `:root {
+    return r(this, y) === "css-variables" ? `:root {
 ${s}}` : s;
   }
   // Get the current format
   get format() {
-    return n(this, f);
+    return r(this, y);
   }
   // Set a new format
   set format(t) {
-    E(this, f, t === "css" ? "css-variables" : t), h(this, w, O).call(this);
+    A(this, y, t === "css" ? "css-variables" : t), f(this, M, ot).call(this);
   }
 }
-g = new WeakMap(), f = new WeakMap(), A = new WeakMap(), w = new WeakSet(), // Register built-in function renderers for different formats
-O = function() {
+P = new WeakMap(), y = new WeakMap(), X = new WeakMap(), M = new WeakSet(), // Register built-in function renderers for different formats
+ot = function() {
   this.registerFunctionRenderer("colorMix", (t) => {
-    const [e, s, r = "50%", i = "lab"] = t, l = 100 - (r.includes("%") ? parseFloat(r) : parseFloat(r) * 100);
-    return `color-mix(in ${i}, ${e} ${l}%, ${s})`;
+    const [e, s, o = "50%", n = "lab"] = t, c = 100 - (o.includes("%") ? parseFloat(o) : parseFloat(o) * 100);
+    return `color-mix(in ${n}, ${e} ${c}%, ${s})`;
   }), this.registerFunctionRenderer("lighten", (t) => {
-    const [e, s] = t, r = Math.round(parseFloat(s) * 100);
-    return `color-mix(in oklch, ${e} ${100 - r}%, white)`;
+    const [e, s] = t, o = Math.round(parseFloat(s) * 100);
+    return `color-mix(in oklch, ${e} ${100 - o}%, white)`;
   }), this.registerFunctionRenderer("darken", (t) => {
-    const [e, s] = t, r = Math.round(parseFloat(s) * 100);
-    return `color-mix(in oklch, ${e} ${100 - r}%, black)`;
-  }), n(this, f) === "scss" && (this.registerFunctionRenderer("lighten", (t) => {
-    const [e, s] = t, r = Math.round(parseFloat(s) * 100);
-    return `lighten(${e}, ${r}%)`;
+    const [e, s] = t, o = Math.round(parseFloat(s) * 100);
+    return `color-mix(in oklch, ${e} ${100 - o}%, black)`;
+  }), r(this, y) === "scss" && (this.registerFunctionRenderer("lighten", (t) => {
+    const [e, s] = t, o = Math.round(parseFloat(s) * 100);
+    return `lighten(${e}, ${o}%)`;
   }), this.registerFunctionRenderer("darken", (t) => {
-    const [e, s] = t, r = Math.round(parseFloat(s) * 100);
-    return `darken(${e}, ${r}%)`;
+    const [e, s] = t, o = Math.round(parseFloat(s) * 100);
+    return `darken(${e}, ${o}%)`;
   }), this.registerFunctionRenderer("colorMix", (t) => {
-    const [e, s, r = "50%"] = t, i = r.includes("%") ? parseFloat(r) : parseFloat(r) * 100;
-    return `mix(${s}, ${e}, ${i}%)`;
+    const [e, s, o = "50%"] = t, n = o.includes("%") ? parseFloat(o) : parseFloat(o) * 100;
+    return `mix(${s}, ${e}, ${n}%)`;
   }));
 }, // Render a color definition value (ColorReference, ColorFunction, or raw color)
-Z = function(t, e) {
-  return t instanceof S ? h(this, w, W).call(this, t.key) : t instanceof M ? h(this, w, N).call(this, t, e) : n(this, g).resolve(e);
+wt = function(t, e) {
+  return t instanceof J ? f(this, M, rt).call(this, t.key) : t instanceof Q ? f(this, M, yt).call(this, t, e) : r(this, P).resolve(e);
 }, // Render a color reference
-W = function(t) {
-  return n(this, f) === "scss" ? `$${t.replace(/\./g, "-")}` : n(this, f) === "css-variables" ? `var(--${t.replace(/\./g, "-")})` : n(this, g).resolve(t);
+rt = function(t) {
+  return r(this, y) === "scss" ? `$${t.replace(/\./g, "-")}` : r(this, y) === "css-variables" ? `var(--${t.replace(/\./g, "-")})` : r(this, P).resolve(t);
 }, // Render a color function
-N = function(t, e) {
-  var o;
-  const s = n(this, A).get(n(this, f));
+yt = function(t, e) {
+  var i;
+  const s = r(this, X).get(r(this, y));
   if (!s)
-    return n(this, g).resolve(e);
-  const r = ((o = [...n(this, g)._getCustomFunctions().entries()].find(([l, d]) => d === t.fn)) == null ? void 0 : o[0]) || "unknown", i = s.get(r);
-  if (!i)
-    return n(this, g).resolve(e);
+    return r(this, P).resolve(e);
+  const o = ((i = [...r(this, P).getCustomFunctions().entries()].find(([c, a]) => a === t.fn)) == null ? void 0 : i[0]) || "unknown", n = s.get(o);
+  if (!n)
+    return r(this, P).resolve(e);
   try {
-    const l = t.args.map((d) => typeof d == "string" && d.includes(".") && n(this, g).has(d) ? h(this, w, W).call(this, d) : d);
-    return i(l);
-  } catch (l) {
-    return console.warn(`Failed to render function ${r}:`, l), n(this, g).resolve(e);
+    const c = t.args.map((a) => typeof a == "string" && a.includes(".") && r(this, P).has(a) ? f(this, M, rt).call(this, a) : a);
+    return n(c);
+  } catch (c) {
+    return console.warn(`Failed to render function ${o}:`, c), r(this, P).resolve(e);
   }
 };
+const kt = (d) => Math.sqrt(Math.pow(d.w, 2) + Math.pow(d.h, 2)), St = (d, t = {}) => {
+  const {
+    gap: e = 0,
+    useMaxDiagonal: s = !0,
+    padding: o = 0.2
+  } = t;
+  let n = [...d];
+  const i = Math.max(...n.map((h) => h.h)), c = Math.max(...n.map((h) => h.w)), a = Math.max(i, c);
+  let u = 0;
+  n = n.map((h) => {
+    const { w: V, h: D } = h, H = Math.max(V, D), z = kt(
+      s ? { w: H, h: H } : h
+    );
+    return u += z, h.diagonal = z, h.diagonalHalf = z / 2, h;
+  });
+  const p = e * (n.length - 1), v = u + p, F = Math.max(v / Math.PI, a + e * 2), b = F + c + e * 2, k = F + i + e * 2, w = {
+    w: b + b * o,
+    h: k + k * o,
+    r: F / 2,
+    centerX: 0,
+    centerY: 0
+  };
+  w.centerX = w.w / 2, w.centerY = w.h / 2;
+  const _ = [];
+  return n.reduce((h, V) => {
+    const D = V.diagonalHalf, H = (h + D) / (v - p);
+    return _.push(H), h + V.diagonal;
+  }, 0), n = n.map((h, V) => {
+    h.angle = 360 * _[V] % 360, h.angleRadians = h.angle * (Math.PI / 180), h.cx = w.centerX + F / 2 * Math.cos(h.angleRadians), h.cy = w.centerY + F / 2 * Math.sin(h.angleRadians);
+    const D = h.cy - h.h / 2, H = h.cy + h.h / 2, z = h.cx - h.w / 2, Ft = h.cx + h.w / 2;
+    return h.top = D, h.left = z, h.bottom = H, h.right = Ft, h;
+  }), {
+    tableItems: n,
+    tableBoundingRect: w
+  };
+}, Rt = (d, t, e = {}) => {
+  const {
+    widthPerLetter: s = 7,
+    fontSize: o = 10,
+    lineHeight: n = 1.5,
+    itemPadding: i = [10, 5]
+  } = e, c = [d, ...Object.keys(t)], a = Math.max(...c.map((b) => b.length)), u = o * n + i[1] * 2, p = a * s + i[0] * 2, v = c.length * u, F = {};
+  return c.forEach((b, k) => {
+    const w = k * u, _ = w + u / 2 + o / 2 - 1;
+    F[b] = {
+      rectTop: w,
+      textTop: _,
+      height: u
+    };
+  }), {
+    w: p,
+    h: v,
+    title: d,
+    colors: t,
+    topPositions: F
+  };
+};
+var E, N, m, it, xt, bt, Pt, mt, vt;
+class jt extends Mt {
+  constructor(e, s = {}) {
+    super(e, "json");
+    g(this, m);
+    g(this, E);
+    g(this, N);
+    A(this, N, e), A(this, E, {
+      gap: 20,
+      useMaxDiagonal: !0,
+      padding: 0.2,
+      widthPerLetter: 7,
+      fontSize: 10,
+      lineHeight: 1.5,
+      itemPadding: [10, 5],
+      showConnections: !0,
+      strokeWidth: 2,
+      dotRadius: 5,
+      ...s
+    });
+  }
+  /**
+   * Get the router instance
+   */
+  get router() {
+    return r(this, N);
+  }
+  /**
+   * Main render method
+   */
+  render() {
+    const e = this.router, s = e.getAllPalettes();
+    if (s.length === 0)
+      return f(this, m, it).call(this, 200, 100, '<text x="100" y="50" text-anchor="middle" font-family="monospace">No palettes defined</text>');
+    const o = s.map(({ name: b }) => {
+      const k = e.getAllKeysForPalette(b), w = {};
+      return k.forEach((_) => {
+        const h = _.split(".").slice(1).join(".");
+        w[h] = e.resolve(_);
+      }), Rt(b, w, r(this, E));
+    }), n = St(o, r(this, E)), i = f(this, m, bt).call(this, n.tableItems, n.tableBoundingRect), c = f(this, m, Pt).call(this, e, i), a = f(this, m, mt).call(this, c), u = f(this, m, vt).call(this, i), p = n.tableItems.map(
+      (b) => f(this, m, xt).call(this, b, b.left, b.top)
+    ).join(""), F = `
+      <style>
+        .palette-table {
+          fill: white;
+          stroke: black;
+          stroke-width: 1;
+        }
+        .palette-table__row {
+          fill: none;
+          stroke: black;
+          stroke-width: 1;
+        }
+        .palette-table__row--header {
+          fill: black;
+        }
+        text {
+          font-family: monospace;
+        }
+        .palette-table__label {
+          fill: black;
+        }
+        .palette-table__label--header {
+          font-weight: bold;
+          fill: white;
+        }
+        .connections-bg {
+          opacity: 0.8;
+        }
+        .connections {
+          opacity: 0.9;
+        }
+        .dots {
+          cursor: pointer;
+        }
+        .dots circle:hover {
+          stroke-width: 2;
+          r: ${(r(this, E).dotRadius || 5) + 1};
+        }
+      </style>
+    ` + a + `<g class="tables">${p}</g>` + u;
+    return f(this, m, it).call(this, n.tableBoundingRect.w, n.tableBoundingRect.h, F);
+  }
+}
+E = new WeakMap(), N = new WeakMap(), m = new WeakSet(), /**
+ * Create SVG element with viewBox
+ */
+it = function(e, s, o) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${e} ${s}">${o}</svg>`;
+}, /**
+ * Generate SVG group for a table item (palette)
+ */
+xt = function(e, s, o) {
+  if (!e.title || !e.colors || !e.topPositions) return "";
+  const { w: n, h: i, title: c, colors: a, topPositions: u } = e, { fontSize: p, itemPadding: v = [10, 5] } = r(this, E), b = [c, ...Object.keys(a)].map((k) => {
+    const w = k === c, { rectTop: _, textTop: h, height: V } = u[k], D = w ? "" : a[k], H = `<rect class="palette-table__row ${w ? "palette-table__row--header" : ""}" width="${n}" height="${V}" y="${_}" 
+        ${D ? `data-color="${D}"` : ""} />`, z = `<text class="palette-table__label ${w ? "palette-table__label--header" : ""}" x="${v[0]}" y="${h}" font-size="${p}"
+        ${D ? `data-color="${D}"` : ""}>${k}</text>`;
+    return H + z;
+  }).join("");
+  return `<g transform="translate(${s}, ${o})">
+      <rect class="palette-table" width="${n}" height="${i}" />
+      ${b}
+    </g>`;
+}, /**
+ * Extract connection points from table items
+ */
+bt = function(e, s) {
+  const o = {};
+  return e.forEach((n) => {
+    !n.title || !n.colors || !n.topPositions || Object.keys(n.colors).forEach((i) => {
+      const c = `${n.title}.${i}`, a = n.topPositions[i], u = n.left < s.centerX, p = u ? n.left + n.w : n.left, v = a.rectTop + a.height / 2 + n.top;
+      o[c] = {
+        key: c,
+        x: p,
+        y: v,
+        isLeft: u,
+        color: n.colors[i] || "#000000",
+        colorName: i
+      };
+    });
+  }), o;
+}, /**
+ * Find connections between colors (references and function dependencies)
+ */
+Pt = function(e, s) {
+  const o = [], n = /* @__PURE__ */ new Set();
+  return Object.keys(s).forEach((i) => {
+    const c = e.getDependencies(i), a = s[i];
+    a && c.forEach((u) => {
+      const p = s[u];
+      if (p) {
+        const v = `${i}->${u}`, F = `${u}->${i}`;
+        !n.has(v) && !n.has(F) && (o.push({ from: a, to: p }), n.add(v));
+      }
+    });
+  }), o;
+}, /**
+ * Generate SVG paths for connections
+ */
+mt = function(e) {
+  if (!r(this, E).showConnections || e.length === 0) return "";
+  const { strokeWidth: s = 2 } = r(this, E), o = e.map((i) => {
+    const { from: c, to: a } = i, p = 40 + Math.abs(c.y - a.y) * 0.3;
+    return `<path d="${`M ${c.x} ${c.y} C ${c.x + (c.isLeft ? p : -p)} ${c.y}, ${a.x + (a.isLeft ? p : -p)} ${a.y}, ${a.x} ${a.y}`}" stroke="#000" stroke-width="${s + 1.5}" fill="none" />`;
+  }).join(""), n = e.map((i) => {
+    const { from: c, to: a } = i, p = 40 + Math.abs(c.y - a.y) * 0.3;
+    return `<path d="${`M ${c.x} ${c.y} C ${c.x + (c.isLeft ? p : -p)} ${c.y}, ${a.x + (a.isLeft ? p : -p)} ${a.y}, ${a.x} ${a.y}`}" stroke="${c.color}" stroke-width="${s}" fill="none" data-color="${c.color}" />`;
+  }).join("");
+  return `
+      <g class="connections-bg">${o}</g>
+      <g class="connections">${n}</g>
+    `;
+}, /**
+ * Generate SVG dots for connection points
+ */
+vt = function(e) {
+  const { dotRadius: s = 5 } = r(this, E);
+  return `<g class="dots">${Object.values(e).map((n) => `<circle cx="${n.x}" cy="${n.y}" r="${s}" 
+        fill="${n.color}" stroke="black" stroke-width="1" 
+        data-color="${n.color}" data-key="${n.key}" />`).join("")}</g>`;
+};
 export {
-  I as CircularDependencyError,
-  M as ColorFunction,
-  S as ColorReference,
-  nt as ColorRenderer,
-  rt as ColorRouter,
-  $ as PaletteError
+  U as CircularDependencyError,
+  Q as ColorFunction,
+  J as ColorReference,
+  Mt as ColorRenderer,
+  At as ColorRouter,
+  C as PaletteError,
+  jt as SVGRenderer,
+  Rt as createTableItemFromPalette,
+  St as tableView
 };

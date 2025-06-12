@@ -35,8 +35,6 @@ export type LogCallback = (message: string) => void;
 export type ColorRendererClass = new (router: ColorRouter, format?: 'css-variables' | 'scss' | 'json') => any;
 export declare class ColorRouter {
     #private;
-    private _ColorRenderer?;
-    private _logCallback?;
     constructor(options?: {
         mode?: 'auto' | 'batch';
     });
@@ -62,7 +60,6 @@ export declare class ColorRouter {
         config: PaletteConfig;
     }>;
     getAllKeysForPalette(paletteName: string): string[];
-    getDefinitionForKey(key: string): ColorDefinition;
     valueToString(value: ColorDefinition): string;
     get mode(): 'auto' | 'batch';
     set mode(value: 'auto' | 'batch');
@@ -70,13 +67,12 @@ export declare class ColorRouter {
     getDependencies(key: string): string[];
     getDependents(key: string): string[];
     getConnectionGraph(): Record<string, string[]>;
-    _getDefinition(key: string): ColorDefinition;
-    _getCustomFunctions(): Map<string, (...args: any[]) => string>;
+    getDefinitionForKey(key: string): ColorDefinition;
+    getCustomFunctions(): ReadonlyMap<string, (...args: any[]) => string>;
     getPaletteDependencies(paletteName: string): string[];
     resolvePalette(paletteName: string): Record<string, string>;
     createRenderer(format?: 'css-variables' | 'scss' | 'json'): any;
     setColorRenderer(ColorRenderer: ColorRendererClass): void;
     setLogCallback(callback: LogCallback): void;
-    render(format?: 'css-variables' | 'scss' | 'json'): string;
 }
 //# sourceMappingURL=ColorRouter.d.ts.map

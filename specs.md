@@ -246,7 +246,8 @@ The system supports different output formats while preserving color relationship
 
 ```typescript
 // CSS Variables Renderer - preserves references where possible
-router.render('css-variables')
+const cssRenderer = router.createRenderer('css-variables');
+cssRenderer.render();
 // Output:
 // {
 //   '--layout-background': 'var(--brand-primary)',
@@ -255,7 +256,8 @@ router.render('css-variables')
 // }
 
 // JSON Renderer - all final colors resolved to hex values
-router.render('json')  
+const jsonRenderer = router.createRenderer('json');
+jsonRenderer.render();
 // Output:
 // {
 //   'layout.background': '#ff0000',
@@ -264,7 +266,8 @@ router.render('json')
 // }
 
 // SCSS Variables Renderer
-router.render('scss')
+const scssRenderer = router.createRenderer('scss');
+scssRenderer.render();
 // Output:
 // {
 //   '$layout-background': '$brand-primary',
@@ -428,7 +431,8 @@ router.valueToString(value: ColorDefinition): string
 router.has(key: string): boolean
 
 // Export & Rendering
-router.render(format: RenderFormat): string // Legacy method, uses ColorRenderer
+router.createRenderer(format: RenderFormat): ColorRenderer // Create renderer with format
+ColorRenderer.render(): string // Generate output in renderer's format
 router.createRenderer(format?: RenderFormat): ColorRenderer
 
 // Dependency Analysis

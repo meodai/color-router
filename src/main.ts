@@ -127,7 +127,8 @@ function renderColorDemo(): void {
   
   try {
     // Get the CSS variables output and inject it into a style element
-    const cssOutput = router.render('css-variables');
+    const renderer = router.createRenderer('css-variables');
+    const cssOutput = renderer.render();
     
     // Create or update the demo styles
     let demoStyle = document.getElementById('demo-styles') as HTMLStyleElement;
