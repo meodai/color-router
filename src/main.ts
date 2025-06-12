@@ -392,15 +392,13 @@ function setupInitialState(): void {
   // Base colors palette - foundation colors
   router.createPalette('base');
   router.define('base.white', '#ffffff');
-  router.define('base.black', '#0c0c0c');
+  router.define('base.black', '#202126');
   router.define('base.blue', '#0066cc');
   router.define('base.orange', '#ff6600');
-  router.define('base.gray-100', '#f8f9fa');
-  router.define('base.gray-800', '#343a40');
 
   // Scale palette (0-900) - systematic neutral scale based on base.black
   router.createPalette('scale');
-  router.define('scale.0', '#ffffff');  // Pure white
+  router.define('scale.0', router.ref('base.white'));  // Pure white
   router.define('scale.900', router.ref('base.black'));  // Darkest = base.black
   router.define('scale.800', router.func('lighten', 'scale.900', 0.1));
   router.define('scale.700', router.func('lighten', 'scale.900', 0.2));
