@@ -1,6 +1,7 @@
 import * as culori from 'culori';
 import { ColorRouter } from './ColorRouter';
 import { ColorRenderer } from './ColorRenderer';
+import { SVGRenderer } from './SVGRenderer';
 
 // --- UI & DEMO LOGIC ---
 const router = new ColorRouter();
@@ -68,17 +69,55 @@ function renderPalettes(): void {
 
 function renderOutput(): void {
   const activeTab = document.querySelector('.tab-button.active') as HTMLElement;
-  const format = (activeTab?.dataset.tab || 'css-variables') as 'css-variables' | 'scss' | 'json';
-  const codeEl = document.getElementById('output-code');
-  if (!codeEl) return;
+  const format = activeTab?.dataset.tab || 'css-variables';
+  const outputContainer = document.getElementById('output-container');
+  if (!outputContainer) return;
   
   try {
-    // Use the new renderer system
-    const renderer = router.createRenderer(format);
-    codeEl.textContent = renderer.render();
-    codeEl.className = `language-${format} text-sm text-gray-200 font-mono`;
+    if (format === 'svg') {
+      // SVG visualization mode
+      const svgRenderer = new SVGRenderer(router, {
+        showConnections: true,
+        gap: 20,
+        padding: 0.1,
+        fontSize: 10,
+        strokeWidth: 2,
+        dotRadius: 4
+      });
+      const svgContent = svgRenderer.render();
+      
+      outputContainer.innerHTML = `
+        <div class="bg-white p-4 h-96 overflow-auto flex items-center justify-center svg-container">
+          ${svgContent}
+        </div>
+      `;
+    } else {
+      // Standard text output mode
+      const codeEl = document.getElementById('output-code');
+      if (!codeEl) {
+        outputContainer.innerHTML = `
+          <div class="bg-gray-900 p-4 h-96 overflow-auto">
+            <pre><code id="output-code" class="language-${format} text-sm text-gray-200 font-mono"></code></pre>
+          </div>
+        `;
+      }
+      
+      const renderer = router.createRenderer(format as 'css-variables' | 'scss' | 'json');
+      const newCodeEl = document.getElementById('output-code')!;
+      newCodeEl.textContent = renderer.render();
+      newCodeEl.className = `language-${format} text-sm text-gray-200 font-mono`;
+    }
   } catch (e) {
-    codeEl.textContent = `Error rendering output:\n${(e as Error).message}`;
+    const codeEl = document.getElementById('output-code');
+    if (codeEl) {
+      codeEl.textContent = `Error rendering output:\n${(e as Error).message}`;
+    } else {
+      outputContainer.innerHTML = `
+        <div class="bg-gray-900 p-4 h-96 overflow-auto">
+          <pre class="text-red-400 text-sm">Error rendering output:\n${(e as Error).message}</pre>
+        </div>
+      `;
+    }
   }
 }
 
@@ -133,6 +172,44 @@ function renderColorDemo(): void {
   }
 }
 
+function renderSVGVisualization(): void {
+  const container = document.getElementById('svg-visualization-container');
+  if (!container) return;
+  
+  try {
+    const showConnections = (document.getElementById('show-connections') as HTMLInputElement)?.checked ?? true;
+    
+    const svgRenderer = new SVGRenderer(router, {
+      showConnections,
+      gap: 25,
+      padding: 0.15,
+      fontSize: 12,
+      strokeWidth: 2,
+      dotRadius: 5,
+      lineHeight: 1.4,
+      widthPerLetter: 8
+    });
+    
+    const svgContent = svgRenderer.render();
+    
+    container.innerHTML = `
+      <div class="svg-container w-full h-full flex items-center justify-center">
+        ${svgContent}
+      </div>
+    `;
+  } catch (e) {
+    container.innerHTML = `
+      <div class="text-center text-red-500">
+        <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <p class="text-lg font-medium">Error rendering visualization</p>
+        <p class="text-sm">${(e as Error).message}</p>
+      </div>
+    `;
+  }
+}
+
 // --- Event Listeners ---
 document.getElementById('create-palette')?.addEventListener('click', () => {
   const nameInput = document.getElementById('palette-name') as HTMLInputElement;
@@ -143,6 +220,7 @@ document.getElementById('create-palette')?.addEventListener('click', () => {
       renderPalettes();
       renderOutput();
       renderColorDemo();
+      renderSVGVisualization();
     } catch (e) {
       logEvent(`<span class="text-red-500">ERROR:</span> ${(e as Error).message}`);
     }
@@ -202,6 +280,7 @@ document.getElementById('define-color')?.addEventListener('click', () => {
       renderPalettes();
       renderOutput();
       renderColorDemo();
+      renderSVGVisualization();
     }
   } catch (e) {
     logEvent(`<span class="text-red-500">ERROR:</span> ${(e as Error).message}`);
@@ -241,6 +320,7 @@ document.querySelectorAll('input[name="update-mode"]').forEach(radio => {
       renderPalettes();
       renderOutput();
       renderColorDemo();
+      renderSVGVisualization();
     }
     logEvent(`Mode switched to '${router.mode}'.`);
   });
@@ -251,6 +331,7 @@ document.getElementById('flush-btn')?.addEventListener('click', () => {
   renderPalettes();
   renderOutput();
   renderColorDemo();
+  renderSVGVisualization();
 });
 
 document.querySelectorAll('.tab-button').forEach(btn => {
@@ -259,7 +340,17 @@ document.querySelectorAll('.tab-button').forEach(btn => {
     (e.target as HTMLElement).classList.add('active');
     renderOutput();
     renderColorDemo();
+    renderSVGVisualization();
   });
+});
+
+// Handle SVG visualization controls
+document.getElementById('show-connections')?.addEventListener('change', () => {
+  renderSVGVisualization();
+});
+
+document.getElementById('refresh-viz')?.addEventListener('click', () => {
+  renderSVGVisualization();
 });
 
 // Handle edit color button clicks using event delegation
@@ -406,6 +497,7 @@ function setupInitialState(): void {
   renderPalettes();
   renderOutput();
   renderColorDemo();
+  renderSVGVisualization();
 }
 
 router.on('change', (e) => {
