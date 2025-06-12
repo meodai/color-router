@@ -2,6 +2,19 @@
 
 An advanced TypeScript color management system with reactive routing, palette inheritance, and multiple output formats.
 
+## The Problem: Design System Complexity
+
+As PJ Onori eloquently explains in ["Systems, math and explosions"](https://pjonori.blog/posts/systems-math-explosions/), color palettes in design systems suffer from combinatorial explosions. A 7-color palette has 21 two-color combinations, but a 190-color palette (like Material Design) has 17,955 combinations—making the system essentially incomprehensible.
+
+The Color Router System addresses this complexity through:
+
+- **Reactive Dependencies**: Colors update automatically when their dependencies change
+- **Controlled Palette Inheritance**: Extend palettes without exponential complexity growth  
+- **Reference System**: Maintain relationships without manual synchronization
+- **Function-Based Logic**: Programmatic color generation instead of manual combinations
+
+This approach transforms chaotic color proliferation into a more manageable, predictable system.
+
 ## Installation
 
 ### NPM Package
@@ -184,6 +197,76 @@ $card-primary-text: $scale-0;
 ```
 
 ## API Reference
+
+### Avoiding Complexity Explosions
+
+The Color Router System implements several strategies to prevent the [combinatorial explosions](https://pjonori.blog/posts/systems-math-explosions/) that plague traditional color systems:
+
+#### Reactive Dependencies Over Manual Synchronization
+Instead of manually maintaining color relationships across hundreds of combinations, the system automatically resolves dependencies:
+
+```typescript
+// Traditional approach: manual synchronization nightmare
+const buttonPrimary = '#3498db';
+const buttonHover = '#2980b9';    // Must manually darken
+const buttonText = '#ffffff';     // Must manually choose contrast
+const cardBorder = '#2980b9';     // Must manually sync with hover
+
+// Color Router approach: automatic dependency resolution
+router.define('brand.primary', '#3498db');
+router.define('button.default', router.ref('brand.primary'));
+router.define('button.hover', router.func('darken', 'button.default', '15%'));
+router.define('button.text', router.func('bestContrastWith', 'button.default'));
+router.define('card.border', router.ref('button.hover'));
+```
+
+#### Controlled Inheritance Over Unbounded Growth
+Palette inheritance creates predictable extension points rather than exponential color variations:
+
+```typescript
+// Creates manageable hierarchy instead of flat color explosion
+router.createPalette('base');        // Foundation colors
+router.createPalette('light', { extends: 'base' });  // Light theme variants
+router.createPalette('dark', { extends: 'base' });   // Dark theme variants
+```
+
+#### Function-Based Logic Over Hardcoded Combinations
+Mathematical functions generate colors programmatically, reducing the need for pre-defined combinations:
+
+```typescript
+// Instead of defining every possible color mix manually
+router.define('accent.subtle', router.func('colorMix', 'brand.primary', 'neutral.background', '20%'));
+router.define('status.success', router.func('minContrastWith', 'surface.background', 4.5));
+```
+
+This approach transforms what Onori describes as "piles of stuff" back into comprehensible, maintainable systems.
+
+#### Documenting Intent to Combat Chaos
+
+One of the key insights from Onori's piece is that complex systems become "unpredictable" and devolve into incomprehensible chaos. The Color Router System addresses this by making relationships and intentions explicit and discoverable:
+
+```typescript
+// Intent is documented in the code itself
+router.define('button.hover', router.func('darken', 'button.default', '15%'));
+// ^ This relationship is self-documenting: "hover state is 15% darker than default"
+
+router.define('card.text', router.func('bestContrastWith', 'card.background', 'brand'));
+// ^ Intent: "ensure accessible contrast, preferring colors from brand palette"
+
+router.define('status.error', router.func('relativeTo', 'red.500', 'current-theme'));
+// ^ Intent: "error color adapts to current theme context"
+```
+
+When you query the system, you don't just get a color value—you get the reasoning:
+
+```typescript
+const colorInfo = router.resolve('button.hover');
+// Returns: { value: '#2980b9', dependencies: ['button.default'], function: 'darken', args: ['15%'] }
+```
+
+This self-documenting nature prevents the system from becoming a "black box" where relationships are opaque. Instead of wondering "why is this color this value?", the intent is preserved and queryable. This documentation of relationships addresses what Onori identifies as the core problem: when systems become too complex to understand, they become unpredictable and chaotic.
+
+By capturing not just *what* colors exist, but *why* they exist and *how* they relate to each other, the Color Router System maintains comprehensibility even as it scales.
 
 ### ColorRouter
 
