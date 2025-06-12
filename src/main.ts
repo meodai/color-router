@@ -446,8 +446,8 @@ function setupInitialState(): void {
 
   // --- RENDERER DEMONSTRATION PALETTE ---
   router.createPalette('demo');
-  router.define('demo.primary', '#3498db');
-  router.define('demo.secondary', '#e74c3c');
+  router.define('demo.primary', router.ref('base.accent'));
+  router.define('demo.secondary', router.ref('base.attention'));
   
   // Demonstrate all function types with their renderers
   router.define('demo.mixed', router.func('colorMix', 'demo.primary', 'demo.secondary', 0.3, 'lab'));
@@ -455,7 +455,7 @@ function setupInitialState(): void {
   router.define('demo.darker', router.func('darken', 'demo.primary', 0.2));
   router.define('demo.contrast', router.func('bestContrastWith', 'demo.primary', 'ramp'));
   router.define('demo.relative', router.func('relativeTo', 'demo.primary', 'r g b / 0.7'));
-  router.define('demo.minContrast', router.func('minContrastWith', 'demo.primary', 4.5));
+  router.define('demo.minContrast', router.func('minContrastWith', 'demo.primary', 'ramp', 2.5));
 
   // --- SCALE (was bold-colors) PALETTE DEMO ---
   router.createPalette('scale');

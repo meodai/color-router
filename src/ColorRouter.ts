@@ -456,7 +456,7 @@ export class ColorRouter {
     this.registerFunction('bestContrastWith', bestContrastWith.bind(this));
     this.registerFunction('colorMix', colorMix);
     this.registerFunction('relativeTo', relativeTo);
-    this.registerFunction('minContrastWith', minContrastWith);
+    this.registerFunction('minContrastWith', minContrastWith.bind(this));
     this.registerFunction('lighten', lighten);
     this.registerFunction('darken', darken);
   }
