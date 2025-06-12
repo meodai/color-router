@@ -144,20 +144,11 @@ function renderColorDemo(): void {
       <!-- Card Palette Demo -->
       <div class="p-6 rounded-lg border shadow-sm" style="background-color: var(--card-background, #ffffff); border-color: var(--card-interaction, #0066cc); color: var(--card-onBackground, #0f172a);">
         <h3 class="text-xl font-medium mb-3">Simplified Card Component</h3>
-        <p class="text-sm mb-4 opacity-75">This card uses essential color pairs: background/onBackground, interaction/onInteraction, and warning/onWarning.</p>
+        <p class="text-sm mb-4 opacity-75">This card uses only 4 essential colors: background, onBackground, interaction, and onInteraction.</p>
         
         <div class="flex flex-wrap gap-2 mb-4">
           <button class="px-4 py-2 text-sm font-medium rounded transition-colors" style="background-color: var(--card-interaction, #0066cc); color: var(--card-onInteraction, #ffffff);">Primary Action</button>
           <button class="px-3 py-2 text-sm font-medium rounded border transition-colors" style="border-color: var(--card-interaction, #0066cc); color: var(--card-interaction, #0066cc); background-color: transparent;">Secondary</button>
-        </div>
-        
-        <div class="p-3 rounded mb-4" style="background-color: var(--card-warning, #ff6600); color: var(--card-onWarning, #ffffff);">
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-            </svg>
-            <span class="text-sm font-medium">Warning: Important information</span>
-          </div>
         </div>
         
         <div class="text-xs space-y-1 opacity-75">
@@ -166,8 +157,6 @@ function renderColorDemo(): void {
           <p>• On Background: <code>bestContrastWith('card.background', 'scale')</code> → <code>var(--card-onBackground)</code></p>
           <p>• Interaction: <code>ref('base.blue')</code> → <code>var(--card-interaction)</code></p>
           <p>• On Interaction: <code>bestContrastWith('base.blue', 'scale')</code> → <code>var(--card-onInteraction)</code></p>
-          <p>• Warning: <code>ref('base.orange')</code> → <code>var(--card-warning)</code></p>
-          <p>• On Warning: <code>bestContrastWith('base.orange', 'scale')</code> → <code>var(--card-onWarning)</code></p>
         </div>
       </div>
     `;
