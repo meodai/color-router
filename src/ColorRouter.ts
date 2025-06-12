@@ -607,7 +607,7 @@ export class ColorRouter {
       const args = value.args.map(a => typeof a === 'string' ? `'${a}'` : a).join(', ');
       return `${fnName}(${args})`;
     }
-    return value; // Return raw value without quotes
+    return value; // Return raw value without quotes for hex colors
   }
 
   get mode(): 'auto' | 'batch' {

@@ -61,6 +61,7 @@ export declare class ColorRouter {
     }>;
     getAllKeysForPalette(paletteName: string): string[];
     valueToString(value: ColorDefinition): string;
+    getRawValue(value: ColorDefinition): string;
     get mode(): 'auto' | 'batch';
     set mode(value: 'auto' | 'batch');
     get batchQueueSize(): number;

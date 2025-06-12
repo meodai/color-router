@@ -4,12 +4,12 @@ var ct = (d) => {
 var Z = (d, t, e) => t.has(d) || ct("Cannot " + e);
 var r = (d, t, e) => (Z(d, t, "read from private field"), e ? e.call(d) : t.get(d)), g = (d, t, e) => t.has(d) ? ct("Cannot add the same private member more than once") : t instanceof WeakSet ? t.add(d) : t.set(d, e), A = (d, t, e, s) => (Z(d, t, "write to private field"), s ? s.call(d, e) : t.set(d, e), e), f = (d, t, e) => (Z(d, t, "access private method"), e);
 import { parse as K, formatHex as Y, wcagContrast as L, interpolate as Ct, converter as at } from "culori";
-class J {
+class I {
   constructor(t) {
     this.key = t, this.type = Symbol.for("ColorReference");
   }
 }
-class Q {
+class J {
   constructor(t, e, s) {
     this.fn = t, this.args = e, this.dependencies = s, this.type = Symbol.for("ColorFunction");
   }
@@ -30,34 +30,34 @@ class U extends Error {
     super(`Circular dependency detected: ${t.join(" -> ")}`), this.path = t, this.name = "CircularDependencyError";
   }
 }
-var x, T, S, j, R, O, G, B, W, I, $, l, tt, ht, q, et, lt, ft, dt, ut, pt, st, gt, nt, $t;
+var x, T, R, j, S, B, G, W, V, N, $, l, tt, ht, Q, et, lt, ft, dt, ut, pt, st, gt, nt, $t;
 class At {
   constructor(t = {}) {
     g(this, l);
     g(this, x, /* @__PURE__ */ new Map());
     g(this, T, /* @__PURE__ */ new Map());
-    g(this, S, /* @__PURE__ */ new Map());
-    g(this, j, /* @__PURE__ */ new Map());
     g(this, R, /* @__PURE__ */ new Map());
-    g(this, O, "auto");
+    g(this, j, /* @__PURE__ */ new Map());
+    g(this, S, /* @__PURE__ */ new Map());
+    g(this, B, "auto");
     g(this, G, /* @__PURE__ */ new Set());
-    g(this, B, new EventTarget());
-    g(this, W, /* @__PURE__ */ new Map());
-    g(this, I);
+    g(this, W, new EventTarget());
+    g(this, V, /* @__PURE__ */ new Map());
+    g(this, N);
     g(this, $);
-    A(this, O, t.mode || "auto"), f(this, l, $t).call(this);
+    A(this, B, t.mode || "auto"), f(this, l, $t).call(this);
   }
   // --- CUSTOM FUNCTIONS ---
   registerFunction(t, e) {
     if (this[t] || t === "ref" || t === "func")
       throw new C(`Function name "${t}" is reserved.`);
-    r(this, W).set(t, e), r(this, $) && r(this, $).call(this, `Registered function '${t}'.`);
+    r(this, V).set(t, e), r(this, $) && r(this, $).call(this, `Registered function '${t}'.`);
   }
   func(t, ...e) {
-    if (!r(this, W).has(t))
+    if (!r(this, V).has(t))
       throw new C(`Custom function "${t}" is not registered.`);
-    const s = r(this, W).get(t), o = e.filter((n) => typeof n == "string" && n.includes("."));
-    return new Q(s, e, o);
+    const s = r(this, V).get(t), o = e.filter((n) => typeof n == "string" && n.includes("."));
+    return new J(s, e, o);
   }
   // --- PALETTE MANAGEMENT ---
   createPalette(t, e = {}) {
@@ -89,7 +89,7 @@ class At {
     if (!r(this, x).has(t)) throw new C(`Palette "${t}" does not exist.`);
     const e = this.getAllKeysForPalette(t);
     for (const s of e)
-      r(this, T).delete(s), r(this, S).delete(s), r(this, j).delete(s), r(this, R).delete(s);
+      r(this, T).delete(s), r(this, R).delete(s), r(this, j).delete(s), r(this, S).delete(s);
     r(this, x).delete(t), r(this, $) && r(this, $).call(this, `Deleted palette '${t}'.`);
   }
   // --- COLOR DEFINITION & MODIFICATION ---
@@ -104,24 +104,24 @@ class At {
     f(this, l, tt).call(this, t, e);
   }
   flush() {
-    if (r(this, O) !== "batch") return;
+    if (r(this, B) !== "batch") return;
     const t = f(this, l, pt).call(this, Array.from(r(this, G))), e = [];
     for (const s of t) {
-      const o = r(this, S).get(s);
-      f(this, l, q).call(this, s);
-      const n = r(this, S).get(s);
+      const o = r(this, R).get(s);
+      f(this, l, Q).call(this, s);
+      const n = r(this, R).get(s);
       o !== n && (e.push({ key: s, oldValue: o, newValue: n }), f(this, l, nt).call(this, s, n, o));
     }
-    e.length > 0 && (r(this, B).dispatchEvent(new CustomEvent("change", { detail: e })), r(this, B).dispatchEvent(new CustomEvent("batch-complete", { detail: e })), r(this, $) && r(this, $).call(this, `Flush complete. ${e.length} colors updated.`)), r(this, G).clear();
+    e.length > 0 && (r(this, W).dispatchEvent(new CustomEvent("change", { detail: e })), r(this, W).dispatchEvent(new CustomEvent("batch-complete", { detail: e })), r(this, $) && r(this, $).call(this, `Flush complete. ${e.length} colors updated.`)), r(this, G).clear();
   }
   resolve(t) {
-    if (!r(this, S).has(t))
+    if (!r(this, R).has(t))
       try {
-        f(this, l, q).call(this, t);
+        f(this, l, Q).call(this, t);
       } catch (e) {
         return r(this, $) && r(this, $).call(this, `Failed to resolve '${t}': ${e.message}`), "invalid";
       }
-    return r(this, S).get(t);
+    return r(this, R).get(t);
   }
   // --- UTILITY & HELPER FUNCTIONS ---
   has(t) {
@@ -138,7 +138,7 @@ class At {
     return !1;
   }
   on(t, e) {
-    r(this, B).addEventListener(t, e);
+    r(this, W).addEventListener(t, e);
   }
   watch(t, e) {
     this.on(`watch:${t}`, (s) => {
@@ -148,7 +148,7 @@ class At {
   }
   // --- PUBLIC API FOR REFERENCES & BUILT-IN FUNCTIONS ---
   ref(t) {
-    return new J(t);
+    return new I(t);
   }
   // --- PUBLIC GETTERS FOR UI ---
   getAllPalettes() {
@@ -160,25 +160,35 @@ class At {
   valueToString(t) {
     return f(this, l, st).call(this, t);
   }
+  // Get raw value for editing (without quotes or formatting)
+  getRawValue(t) {
+    var e;
+    if (t instanceof I) return `ref('${t.key}')`;
+    if (t instanceof J) {
+      const s = ((e = [...r(this, V).entries()].find(([n, i]) => i === t.fn)) == null ? void 0 : e[0]) || t.fn.name.replace("bound ", ""), o = t.args.map((n) => typeof n == "string" ? `'${n}'` : n).join(", ");
+      return `${s}(${o})`;
+    }
+    return t;
+  }
   get mode() {
-    return r(this, O);
+    return r(this, B);
   }
   set mode(t) {
-    A(this, O, t);
+    A(this, B, t);
   }
   get batchQueueSize() {
     return r(this, G).size;
   }
   // --- DEPENDENCY ANALYSIS ---
   getDependencies(t) {
-    return Array.from(r(this, R).get(t) || []);
+    return Array.from(r(this, S).get(t) || []);
   }
   getDependents(t) {
     return Array.from(r(this, j).get(t) || []);
   }
   getConnectionGraph() {
     const t = {};
-    for (const [e, s] of r(this, R).entries())
+    for (const [e, s] of r(this, S).entries())
       t[e] = Array.from(s);
     return t;
   }
@@ -192,7 +202,7 @@ class At {
     }
   }
   getCustomFunctions() {
-    return new Map(r(this, W));
+    return new Map(r(this, V));
   }
   getPaletteDependencies(t) {
     const e = this.getAllKeysForPalette(t), s = /* @__PURE__ */ new Set();
@@ -213,38 +223,38 @@ class At {
   }
   // --- RENDERER ACCESS ---
   createRenderer(t) {
-    if (!r(this, I))
+    if (!r(this, N))
       throw new Error("ColorRenderer class not injected. Please call setColorRenderer() first.");
-    return new (r(this, I))(this, t);
+    return new (r(this, N))(this, t);
   }
   // Method to inject ColorRenderer class to avoid circular imports
   setColorRenderer(t) {
-    A(this, I, t);
+    A(this, N, t);
   }
   // Method to set logging callback for UI integration
   setLogCallback(t) {
     A(this, $, t);
   }
 }
-x = new WeakMap(), T = new WeakMap(), S = new WeakMap(), j = new WeakMap(), R = new WeakMap(), O = new WeakMap(), G = new WeakMap(), B = new WeakMap(), W = new WeakMap(), I = new WeakMap(), $ = new WeakMap(), l = new WeakSet(), tt = function(t, e) {
+x = new WeakMap(), T = new WeakMap(), R = new WeakMap(), j = new WeakMap(), S = new WeakMap(), B = new WeakMap(), G = new WeakMap(), W = new WeakMap(), V = new WeakMap(), N = new WeakMap(), $ = new WeakMap(), l = new WeakSet(), tt = function(t, e) {
   if (typeof e == "string" && !K(e))
     throw new C(`Invalid color value: "${e}". Must be a valid CSS color or a router function.`);
-  r(this, T).set(t, e), f(this, l, ft).call(this, t, e), r(this, O) === "auto" ? f(this, l, ht).call(this, t) : r(this, G).add(t), r(this, $) && r(this, $).call(this, `Defined '${t}' = ${f(this, l, st).call(this, e)}`);
+  r(this, T).set(t, e), f(this, l, ft).call(this, t, e), r(this, B) === "auto" ? f(this, l, ht).call(this, t) : r(this, G).add(t), r(this, $) && r(this, $).call(this, `Defined '${t}' = ${f(this, l, st).call(this, e)}`);
 }, // --- RESOLUTION & REACTIVITY ---
 ht = function(t) {
   const e = f(this, l, ut).call(this, t), s = [];
   for (const o of e) {
-    const n = r(this, S).get(o);
-    f(this, l, q).call(this, o);
-    const i = r(this, S).get(o);
+    const n = r(this, R).get(o);
+    f(this, l, Q).call(this, o);
+    const i = r(this, R).get(o);
     n !== i && (s.push({ key: o, oldValue: n, newValue: i }), f(this, l, nt).call(this, o, i, n));
   }
-  s.length > 0 && r(this, B).dispatchEvent(new CustomEvent("change", { detail: s }));
-}, q = function(t, e = []) {
+  s.length > 0 && r(this, W).dispatchEvent(new CustomEvent("change", { detail: s }));
+}, Q = function(t, e = []) {
   if (e.includes(t)) throw new U([...e, t]);
   const s = f(this, l, et).call(this, t);
   let o;
-  return s instanceof J ? o = f(this, l, q).call(this, s.key, [...e, t]) : s instanceof Q ? o = s.execute(this) : o = f(this, l, gt).call(this, s), r(this, S).set(t, o), o;
+  return s instanceof I ? o = f(this, l, Q).call(this, s.key, [...e, t]) : s instanceof J ? o = s.execute(this) : o = f(this, l, gt).call(this, s), r(this, R).set(t, o), o;
 }, et = function(t) {
   let [e, s] = t.split(".");
   const o = /* @__PURE__ */ new Set();
@@ -279,15 +289,15 @@ ht = function(t) {
 }, // --- DEPENDENCY GRAPH ---
 ft = function(t, e) {
   var o;
-  if (r(this, R).has(t))
-    for (const n of r(this, R).get(t))
+  if (r(this, S).has(t))
+    for (const n of r(this, S).get(t))
       (o = r(this, j).get(n)) == null || o.delete(t);
-  r(this, R).set(t, /* @__PURE__ */ new Set());
+  r(this, S).set(t, /* @__PURE__ */ new Set());
   const s = f(this, l, dt).call(this, e);
   for (const n of s)
-    r(this, j).has(n) || r(this, j).set(n, /* @__PURE__ */ new Set()), r(this, j).get(n).add(t), r(this, R).get(t).add(n);
+    r(this, j).has(n) || r(this, j).set(n, /* @__PURE__ */ new Set()), r(this, j).get(n).add(t), r(this, S).get(t).add(n);
 }, dt = function(t) {
-  return t instanceof J ? [t.key] : t instanceof Q ? t.dependencies : [];
+  return t instanceof I ? [t.key] : t instanceof J ? t.dependencies : [];
 }, ut = function(t) {
   const e = /* @__PURE__ */ new Set(), s = [], o = this;
   function n(i) {
@@ -299,7 +309,7 @@ ft = function(t, e) {
     if (s.has(c)) return;
     if (o.has(c)) throw new U([...o, c]);
     o.add(c);
-    const a = r(n, R).get(c);
+    const a = r(n, S).get(c);
     if (a)
       for (const u of a)
         t.includes(u) && i(u);
@@ -318,9 +328,9 @@ ft = function(t, e) {
   return e;
 }, st = function(t) {
   var e;
-  if (t instanceof J) return `ref('${t.key}')`;
-  if (t instanceof Q) {
-    const s = ((e = [...r(this, W).entries()].find(([n, i]) => i === t.fn)) == null ? void 0 : e[0]) || t.fn.name.replace("bound ", ""), o = t.args.map((n) => typeof n == "string" ? `'${n}'` : n).join(", ");
+  if (t instanceof I) return `ref('${t.key}')`;
+  if (t instanceof J) {
+    const s = ((e = [...r(this, V).entries()].find(([n, i]) => i === t.fn)) == null ? void 0 : e[0]) || t.fn.name.replace("bound ", ""), o = t.args.map((n) => typeof n == "string" ? `'${n}'` : n).join(", ");
     return `${s}(${o})`;
   }
   return `'${t}'`;
@@ -328,7 +338,7 @@ ft = function(t, e) {
   const e = K(t);
   return e ? Y(e) : "#00000000";
 }, nt = function(t, e, s) {
-  r(this, B).dispatchEvent(new CustomEvent(`watch:${t}`, {
+  r(this, W).dispatchEvent(new CustomEvent(`watch:${t}`, {
     detail: { newValue: e, oldValue: s }
   }));
 }, // Register built-in functions during construction
@@ -477,7 +487,7 @@ ot = function() {
   }));
 }, // Render a color definition value (ColorReference, ColorFunction, or raw color)
 wt = function(t, e) {
-  return t instanceof J ? f(this, M, rt).call(this, t.key) : t instanceof Q ? f(this, M, yt).call(this, t, e) : r(this, P).resolve(e);
+  return t instanceof I ? f(this, M, rt).call(this, t.key) : t instanceof J ? f(this, M, yt).call(this, t, e) : r(this, P).resolve(e);
 }, // Render a color reference
 rt = function(t) {
   return r(this, y) === "scss" ? `$${t.replace(/\./g, "-")}` : r(this, y) === "css-variables" ? `var(--${t.replace(/\./g, "-")})` : r(this, P).resolve(t);
@@ -497,7 +507,7 @@ yt = function(t, e) {
     return console.warn(`Failed to render function ${o}:`, c), r(this, P).resolve(e);
   }
 };
-const kt = (d) => Math.sqrt(Math.pow(d.w, 2) + Math.pow(d.h, 2)), St = (d, t = {}) => {
+const kt = (d) => Math.sqrt(Math.pow(d.w, 2) + Math.pow(d.h, 2)), Rt = (d, t = {}) => {
   const {
     gap: e = 0,
     useMaxDiagonal: s = !0,
@@ -507,61 +517,61 @@ const kt = (d) => Math.sqrt(Math.pow(d.w, 2) + Math.pow(d.h, 2)), St = (d, t = {
   const i = Math.max(...n.map((h) => h.h)), c = Math.max(...n.map((h) => h.w)), a = Math.max(i, c);
   let u = 0;
   n = n.map((h) => {
-    const { w: V, h: D } = h, H = Math.max(V, D), z = kt(
-      s ? { w: H, h: H } : h
+    const { w: H, h: D } = h, O = Math.max(H, D), z = kt(
+      s ? { w: O, h: O } : h
     );
     return u += z, h.diagonal = z, h.diagonalHalf = z / 2, h;
   });
-  const p = e * (n.length - 1), v = u + p, F = Math.max(v / Math.PI, a + e * 2), b = F + c + e * 2, k = F + i + e * 2, w = {
+  const p = e * (n.length - 1), F = u + p, v = Math.max(F / Math.PI, a + e * 2), b = v + c + e * 2, k = v + i + e * 2, w = {
     w: b + b * o,
     h: k + k * o,
-    r: F / 2,
+    r: v / 2,
     centerX: 0,
     centerY: 0
   };
   w.centerX = w.w / 2, w.centerY = w.h / 2;
   const _ = [];
-  return n.reduce((h, V) => {
-    const D = V.diagonalHalf, H = (h + D) / (v - p);
-    return _.push(H), h + V.diagonal;
-  }, 0), n = n.map((h, V) => {
-    h.angle = 360 * _[V] % 360, h.angleRadians = h.angle * (Math.PI / 180), h.cx = w.centerX + F / 2 * Math.cos(h.angleRadians), h.cy = w.centerY + F / 2 * Math.sin(h.angleRadians);
-    const D = h.cy - h.h / 2, H = h.cy + h.h / 2, z = h.cx - h.w / 2, Ft = h.cx + h.w / 2;
-    return h.top = D, h.left = z, h.bottom = H, h.right = Ft, h;
+  return n.reduce((h, H) => {
+    const D = H.diagonalHalf, O = (h + D) / (F - p);
+    return _.push(O), h + H.diagonal;
+  }, 0), n = n.map((h, H) => {
+    h.angle = 360 * _[H] % 360, h.angleRadians = h.angle * (Math.PI / 180), h.cx = w.centerX + v / 2 * Math.cos(h.angleRadians), h.cy = w.centerY + v / 2 * Math.sin(h.angleRadians);
+    const D = h.cy - h.h / 2, O = h.cy + h.h / 2, z = h.cx - h.w / 2, vt = h.cx + h.w / 2;
+    return h.top = D, h.left = z, h.bottom = O, h.right = vt, h;
   }), {
     tableItems: n,
     tableBoundingRect: w
   };
-}, Rt = (d, t, e = {}) => {
+}, St = (d, t, e = {}) => {
   const {
     widthPerLetter: s = 7,
     fontSize: o = 10,
     lineHeight: n = 1.5,
     itemPadding: i = [10, 5]
-  } = e, c = [d, ...Object.keys(t)], a = Math.max(...c.map((b) => b.length)), u = o * n + i[1] * 2, p = a * s + i[0] * 2, v = c.length * u, F = {};
+  } = e, c = [d, ...Object.keys(t)], a = Math.max(...c.map((b) => b.length)), u = o * n + i[1] * 2, p = a * s + i[0] * 2, F = c.length * u, v = {};
   return c.forEach((b, k) => {
     const w = k * u, _ = w + u / 2 + o / 2 - 1;
-    F[b] = {
+    v[b] = {
       rectTop: w,
       textTop: _,
       height: u
     };
   }), {
     w: p,
-    h: v,
+    h: F,
     title: d,
     colors: t,
-    topPositions: F
+    topPositions: v
   };
 };
-var E, N, m, it, xt, bt, Pt, mt, vt;
+var E, q, m, it, xt, bt, Pt, mt, Ft;
 class jt extends Mt {
   constructor(e, s = {}) {
     super(e, "json");
     g(this, m);
     g(this, E);
-    g(this, N);
-    A(this, N, e), A(this, E, {
+    g(this, q);
+    A(this, q, e), A(this, E, {
       gap: 20,
       useMaxDiagonal: !0,
       padding: 0.2,
@@ -579,7 +589,7 @@ class jt extends Mt {
    * Get the router instance
    */
   get router() {
-    return r(this, N);
+    return r(this, q);
   }
   /**
    * Main render method
@@ -593,10 +603,10 @@ class jt extends Mt {
       return k.forEach((_) => {
         const h = _.split(".").slice(1).join(".");
         w[h] = e.resolve(_);
-      }), Rt(b, w, r(this, E));
-    }), n = St(o, r(this, E)), i = f(this, m, bt).call(this, n.tableItems, n.tableBoundingRect), c = f(this, m, Pt).call(this, e, i), a = f(this, m, mt).call(this, c), u = f(this, m, vt).call(this, i), p = n.tableItems.map(
+      }), St(b, w, r(this, E));
+    }), n = Rt(o, r(this, E)), i = f(this, m, bt).call(this, n.tableItems, n.tableBoundingRect), c = f(this, m, Pt).call(this, e, i), a = f(this, m, mt).call(this, c), u = f(this, m, Ft).call(this, i), p = n.tableItems.map(
       (b) => f(this, m, xt).call(this, b, b.left, b.top)
-    ).join(""), F = `
+    ).join(""), v = `
       <style>
         .palette-table {
           fill: white;
@@ -636,10 +646,10 @@ class jt extends Mt {
         }
       </style>
     ` + a + `<g class="tables">${p}</g>` + u;
-    return f(this, m, it).call(this, n.tableBoundingRect.w, n.tableBoundingRect.h, F);
+    return f(this, m, it).call(this, n.tableBoundingRect.w, n.tableBoundingRect.h, v);
   }
 }
-E = new WeakMap(), N = new WeakMap(), m = new WeakSet(), /**
+E = new WeakMap(), q = new WeakMap(), m = new WeakSet(), /**
  * Create SVG element with viewBox
  */
 it = function(e, s, o) {
@@ -649,11 +659,11 @@ it = function(e, s, o) {
  */
 xt = function(e, s, o) {
   if (!e.title || !e.colors || !e.topPositions) return "";
-  const { w: n, h: i, title: c, colors: a, topPositions: u } = e, { fontSize: p, itemPadding: v = [10, 5] } = r(this, E), b = [c, ...Object.keys(a)].map((k) => {
-    const w = k === c, { rectTop: _, textTop: h, height: V } = u[k], D = w ? "" : a[k], H = `<rect class="palette-table__row ${w ? "palette-table__row--header" : ""}" width="${n}" height="${V}" y="${_}" 
-        ${D ? `data-color="${D}"` : ""} />`, z = `<text class="palette-table__label ${w ? "palette-table__label--header" : ""}" x="${v[0]}" y="${h}" font-size="${p}"
+  const { w: n, h: i, title: c, colors: a, topPositions: u } = e, { fontSize: p, itemPadding: F = [10, 5] } = r(this, E), b = [c, ...Object.keys(a)].map((k) => {
+    const w = k === c, { rectTop: _, textTop: h, height: H } = u[k], D = w ? "" : a[k], O = `<rect class="palette-table__row ${w ? "palette-table__row--header" : ""}" width="${n}" height="${H}" y="${_}" 
+        ${D ? `data-color="${D}"` : ""} />`, z = `<text class="palette-table__label ${w ? "palette-table__label--header" : ""}" x="${F[0]}" y="${h}" font-size="${p}"
         ${D ? `data-color="${D}"` : ""}>${k}</text>`;
-    return H + z;
+    return O + z;
   }).join("");
   return `<g transform="translate(${s}, ${o})">
       <rect class="palette-table" width="${n}" height="${i}" />
@@ -666,11 +676,11 @@ bt = function(e, s) {
   const o = {};
   return e.forEach((n) => {
     !n.title || !n.colors || !n.topPositions || Object.keys(n.colors).forEach((i) => {
-      const c = `${n.title}.${i}`, a = n.topPositions[i], u = n.left < s.centerX, p = u ? n.left + n.w : n.left, v = a.rectTop + a.height / 2 + n.top;
+      const c = `${n.title}.${i}`, a = n.topPositions[i], u = n.left < s.centerX, p = u ? n.left + n.w : n.left, F = a.rectTop + a.height / 2 + n.top;
       o[c] = {
         key: c,
         x: p,
-        y: v,
+        y: F,
         isLeft: u,
         color: n.colors[i] || "#000000",
         colorName: i
@@ -687,8 +697,8 @@ Pt = function(e, s) {
     a && c.forEach((u) => {
       const p = s[u];
       if (p) {
-        const v = `${i}->${u}`, F = `${u}->${i}`;
-        !n.has(v) && !n.has(F) && (o.push({ from: a, to: p }), n.add(v));
+        const F = `${i}->${u}`, v = `${u}->${i}`;
+        !n.has(F) && !n.has(v) && (o.push({ from: a, to: p }), n.add(F));
       }
     });
   }), o;
@@ -711,7 +721,7 @@ mt = function(e) {
 }, /**
  * Generate SVG dots for connection points
  */
-vt = function(e) {
+Ft = function(e) {
   const { dotRadius: s = 5 } = r(this, E);
   return `<g class="dots">${Object.values(e).map((n) => `<circle cx="${n.x}" cy="${n.y}" r="${s}" 
         fill="${n.color}" stroke="black" stroke-width="1" 
@@ -719,12 +729,12 @@ vt = function(e) {
 };
 export {
   U as CircularDependencyError,
-  Q as ColorFunction,
-  J as ColorReference,
+  J as ColorFunction,
+  I as ColorReference,
   Mt as ColorRenderer,
   At as ColorRouter,
   C as PaletteError,
   jt as SVGRenderer,
-  Rt as createTableItemFromPalette,
-  St as tableView
+  St as createTableItemFromPalette,
+  Rt as tableView
 };
