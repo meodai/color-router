@@ -144,11 +144,20 @@ function renderColorDemo(): void {
       <!-- Card Palette Demo -->
       <div class="p-6 rounded-lg border shadow-sm" style="background-color: var(--card-background, #ffffff); border-color: var(--card-interaction, #0066cc); color: var(--card-onBackground, #0f172a);">
         <h3 class="text-xl font-medium mb-3">Simplified Card Component</h3>
-        <p class="text-sm mb-4 opacity-75">This card uses only 4 essential colors: background, onBackground, interaction, and onInteraction.</p>
+        <p class="text-sm mb-4 opacity-75">This card uses essential color pairs: background/onBackground, interaction/onInteraction, and warning/onWarning.</p>
         
         <div class="flex flex-wrap gap-2 mb-4">
           <button class="px-4 py-2 text-sm font-medium rounded transition-colors" style="background-color: var(--card-interaction, #0066cc); color: var(--card-onInteraction, #ffffff);">Primary Action</button>
           <button class="px-3 py-2 text-sm font-medium rounded border transition-colors" style="border-color: var(--card-interaction, #0066cc); color: var(--card-interaction, #0066cc); background-color: transparent;">Secondary</button>
+        </div>
+        
+        <div class="p-3 rounded mb-4" style="background-color: var(--card-warning, #ff6600); color: var(--card-onWarning, #ffffff);">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+            </svg>
+            <span class="text-sm font-medium">Warning: Important information</span>
+          </div>
         </div>
         
         <div class="text-xs space-y-1 opacity-75">
@@ -157,6 +166,8 @@ function renderColorDemo(): void {
           <p>• On Background: <code>bestContrastWith('card.background', 'scale')</code> → <code>var(--card-onBackground)</code></p>
           <p>• Interaction: <code>ref('base.blue')</code> → <code>var(--card-interaction)</code></p>
           <p>• On Interaction: <code>bestContrastWith('base.blue', 'scale')</code> → <code>var(--card-onInteraction)</code></p>
+          <p>• Warning: <code>ref('base.orange')</code> → <code>var(--card-warning)</code></p>
+          <p>• On Warning: <code>bestContrastWith('base.orange', 'scale')</code> → <code>var(--card-onWarning)</code></p>
         </div>
       </div>
     `;
@@ -415,23 +426,15 @@ function setupInitialState(): void {
   router.define('card.onBackground', router.func('bestContrastWith', 'card.background', 'scale'));
   router.define('card.interaction', router.ref('base.blue'));
   router.define('card.onInteraction', router.func('bestContrastWith', 'base.blue', 'scale'));
-
-  // Demo palette - showcases all function types
-  router.createPalette('demo');
-  router.define('demo.base-color', '#3b82f6');
-  router.define('demo.mixed-color', router.func('colorMix', 'demo.base-color', '#ef4444', '60%', 'oklch'));
-  router.define('demo.light-variant', router.func('lighten', 'demo.base-color', 0.2));
-  router.define('demo.dark-variant', router.func('darken', 'demo.base-color', 0.3));
-  router.define('demo.complex-mix', router.func('colorMix', 'demo.light-variant', 'base.orange', '40%', 'lab'));
-  router.define('demo.best-contrast', router.func('bestContrastWith', 'demo.base-color', 'scale'));
+  router.define('card.warning', router.ref('base.orange'));
+  router.define('card.onWarning', router.func('bestContrastWith', 'base.orange', 'scale'));
 
   router.flush();
   
-  logEvent("Simplified demo with 4 core palettes created:");
-  logEvent("• BASE: Foundation colors (white, black, blue, orange, grays)");
+  logEvent("Simplified demo with 3 core palettes created:");
+  logEvent("• BASE: Foundation colors (white, black, blue, orange)");
   logEvent("• SCALE: Systematic neutral scale - 900=base.black, others lighten progressively");
-  logEvent("• CARD: Simplified theming (background/onBackground, interaction/onInteraction)");
-  logEvent("• DEMO: Function showcase (colorMix, lighten, darken, bestContrastWith)");
+  logEvent("• CARD: Essential theming (background/onBackground, interaction/onInteraction, warning/onWarning)");
   logEvent("Card palette shows proper background/text pairing using bestContrastWith!");
   logEvent("Try changing base.black to see entire scale update automatically!");
   
