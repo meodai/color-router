@@ -430,6 +430,20 @@ function setupInitialState(): void {
   router.define('base.accent', '#0066cc');
   router.define('base.attention', '#ff6600');
 
+  // --- RAMP (was scale) palette (0-900) - systematic neutral ramp based on base.dark
+  // Create this before demo palette since demo.contrast references it
+  router.createPalette('ramp');
+  router.define('ramp.0', router.ref('base.light'));  // Pure light
+  router.define('ramp.900', router.ref('base.dark'));  // Pure dark
+  router.define('ramp.800', router.func('colorMix', 'ramp.0', 'ramp.900', 0.8, 'oklab'));
+  router.define('ramp.700', router.func('colorMix', 'ramp.0', 'ramp.900', 0.7, 'oklab'));
+  router.define('ramp.600', router.func('colorMix', 'ramp.0', 'ramp.900', 0.6, 'oklab'));
+  router.define('ramp.500', router.func('colorMix', 'ramp.0', 'ramp.900', 0.5, 'oklab'));
+  router.define('ramp.400', router.func('colorMix', 'ramp.0', 'ramp.900', 0.4, 'oklab'));
+  router.define('ramp.300', router.func('colorMix', 'ramp.0', 'ramp.900', 0.3, 'oklab'));
+  router.define('ramp.200', router.func('colorMix', 'ramp.0', 'ramp.900', 0.2, 'oklab'));
+  router.define('ramp.100', router.func('colorMix', 'ramp.0', 'ramp.900', 0.1, 'oklab'));
+
   // --- RENDERER DEMONSTRATION PALETTE ---
   router.createPalette('demo');
   router.define('demo.primary', '#3498db');
@@ -452,19 +466,6 @@ function setupInitialState(): void {
   router.define('scale.1', router.func('colorMix', 'scale.0', 'scale.4', 0.25, 'oklab'));
   router.define('scale.2', router.func('colorMix', 'scale.0', 'scale.4', 0.5, 'oklab'));
   router.define('scale.3', router.func('colorMix', 'scale.0', 'scale.4', 0.75, 'oklab'));
-
-  // --- RAMP (was scale) palette (0-900) - systematic neutral ramp based on base.dark
-  router.createPalette('ramp');
-  router.define('ramp.0', router.ref('base.light'));  // Pure light
-  router.define('ramp.900', router.ref('base.dark'));  // Pure dark
-  router.define('ramp.800', router.func('colorMix', 'ramp.0', 'ramp.900', 0.8, 'oklab'));
-  router.define('ramp.700', router.func('colorMix', 'ramp.0', 'ramp.900', 0.7, 'oklab'));
-  router.define('ramp.600', router.func('colorMix', 'ramp.0', 'ramp.900', 0.6, 'oklab'));
-  router.define('ramp.500', router.func('colorMix', 'ramp.0', 'ramp.900', 0.5, 'oklab'));
-  router.define('ramp.400', router.func('colorMix', 'ramp.0', 'ramp.900', 0.4, 'oklab'));
-  router.define('ramp.300', router.func('colorMix', 'ramp.0', 'ramp.900', 0.3, 'oklab'));
-  router.define('ramp.200', router.func('colorMix', 'ramp.0', 'ramp.900', 0.2, 'oklab'));
-  router.define('ramp.100', router.func('colorMix', 'ramp.0', 'ramp.900', 0.1, 'oklab'));
 
   // Card palette - reference scale keys directly, do not extend
   router.createPalette('card');

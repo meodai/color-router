@@ -1,5 +1,5 @@
 // Export all color functions and their renderers
-export { bestContrastWith, bestContrastWithRenderers } from './bestContrastWith';
+export { bestContrastWith, createBestContrastWith, bestContrastWithRenderers } from './bestContrastWith';
 export { colorMix, colorMixRenderers } from './colorMix';
 export { relativeTo, relativeToRenderers } from './relativeTo';
 export { minContrastWith, minContrastWithRenderers } from './minContrastWith';
