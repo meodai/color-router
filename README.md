@@ -162,7 +162,7 @@ router.createPalette('dark', {
 router.define('optimal-text', router.func('bestContrastWith', 'base.primary', 'scale'));
 
 // Color mixing with specific color space
-router.define('mixed-color', router.func('colorMix', 'base.primary', 'base.secondary', '60%', 'lab'));
+router.define('mixed-color', router.func('colorMix', 'base.primary', 'base.secondary', 0.6, 'lab'));
 
 // Automatic contrast optimization
 router.define('accessible-text', router.func('minContrastWith', 'light.background', 4.5));

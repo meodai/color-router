@@ -27,9 +27,9 @@ export class ColorRenderer {
   #registerBuiltinRenderers(): void {
     // CSS format renderers
     this.registerFunctionRenderer('colorMix', (args: any[]): string => {
-      const [color1, color2, ratio = '50%', colorSpace = 'lab'] = args;
+      const [color1, color2, ratio = 0.5, colorSpace = 'lab'] = args;
       // Convert ratio to percentage if it's a decimal
-      const ratioNum = ratio.includes('%') ? parseFloat(ratio) : parseFloat(ratio) * 100;
+      const ratioNum = typeof ratio === 'string' && ratio.includes('%') ? parseFloat(ratio) : parseFloat(ratio) * 100;
       // CSS color-mix syntax: color-mix(in space, color1 percentage, color2)
       // Our colorMix(color1, color2, ratio) means: ratio% of color2 mixed with color1
       // So we need to use (100 - ratio)% for color1 and ratio% for color2
@@ -64,8 +64,8 @@ export class ColorRenderer {
       });
 
       this.registerFunctionRenderer('colorMix', (args: any[]): string => {
-        const [color1, color2, ratio = '50%'] = args;
-        const weight = ratio.includes('%') ? parseFloat(ratio) : parseFloat(ratio) * 100;
+        const [color1, color2, ratio = 0.5] = args;
+        const weight = typeof ratio === 'string' && ratio.includes('%') ? parseFloat(ratio) : parseFloat(ratio) * 100;
         // SCSS mix(color1, color2, weight) means weight% of color1 mixed with color2
         // Our colorMix(color1, color2, ratio) means ratio% of color2 mixed with color1
         // So we use: mix(color2, color1, weight) to get weight% of color2 mixed with color1

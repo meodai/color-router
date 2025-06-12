@@ -98,7 +98,7 @@
         }
     }
     </script>
-  <script type="module" crossorigin src="/color-router/assets/main-CGFgVRFC.js"></script>
+  <script type="module" crossorigin src="/color-router/assets/main-BvDmCsyB.js"></script>
 </head>
 
 <body class="bg-gray-50 text-gray-800">
@@ -134,45 +134,13 @@
                   placeholder="palette.name">
                 <input type="text" id="color-value"
                   class="font-mono block w-full border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  placeholder="e.g., #ff0000, ref('base.primary'), func('colorMix', 'light.primary', 'base.orange', '60%', 'lab')">
+                  placeholder="e.g., #ff0000, ref('base.primary'), func('colorMix', 'light.primary', 'base.orange', 0.6, 'lab')">
               </div>
               <button id="define-color"
                 class="mt-2 w-full inline-flex justify-center items-center border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">Define
                 / Set</button>
               <button id="clear-form"
                 class="mt-1 w-full inline-flex justify-center items-center border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Clear Form</button>
-            </div>
-
-            <div>
-              <label for="fn-name" class="block text-sm font-medium text-gray-700">Register Custom Function</label>
-              <div class="mt-1 flex items-center gap-2">
-                <input type="text" id="fn-name" class="font-mono w-1/3 border-gray-300 shadow-sm sm:text-sm"
-                  placeholder="myFunction">
-                <input type="text" id="fn-body"
-                  class="font-mono flex-grow border-gray-300 shadow-sm sm:text-sm"
-                  placeholder="(color, amount) => ...">
-              </div>
-              <button id="register-fn-btn"
-                class="mt-2 w-full inline-flex justify-center items-center border border-transparent bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2">Register
-                Function</button>
-            </div>
-
-            <div class="flex items-center justify-between pt-4 border-t">
-              <span class="text-sm font-medium text-gray-700">Update Mode:</span>
-              <div class="flex items-center gap-4">
-                <div class="flex items-center gap-2">
-                  <input id="mode-auto" name="update-mode" type="radio" checked
-                    class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                  <label for="mode-auto">Auto</label>
-                </div>
-                <div class="flex items-center gap-2">
-                  <input id="mode-batch" name="update-mode" type="radio"
-                    class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                  <label for="mode-batch">Batch</label>
-                </div>
-                <button id="flush-btn" disabled
-                  class="disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Flush</button>
-              </div>
             </div>
           </div>
         </section>

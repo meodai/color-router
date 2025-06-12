@@ -227,7 +227,7 @@ document.getElementById('define-color')?.addEventListener('click', () => {
     let value: any = valueInput.value.trim();
     const refMatch = value.match(/ref\(['"](.*?)['"]\)/);
     const bestContrastMatch = value.match(/bestContrastWith\(['"](.*?)['"](?:,\s*['"](.*?)['"]\))?\)/);
-    const colorMixMatch = value.match(/colorMix\(['"](.*?)['"],\s*['"](.*?)['"](?:,\s*['"](.*?)['"])?(?:,\s*['"](.*?)['"]\))?\)/);
+    const colorMixMatch = value.match(/colorMix\(['"](.*?)['"],\s*['"](.*?)['"](?:,\s*(['"]*[\d.%]+['"]*))?\s*(?:,\s*['"](.*?)['"]\))?\)/);
     const relativeMatch = value.match(/relativeTo\(['"](.*?)['"],\s*['"](.*?)['"]\)/);
     const minContrastMatch = value.match(/minContrastWith\(['"](.*?)['"](?:,\s*([\d.]+))?\)/);
     const lightenMatch = value.match(/lighten\(['"](.*?)['"],\s*([\d.]+)\)/);
@@ -243,9 +243,18 @@ document.getElementById('define-color')?.addEventListener('click', () => {
     } else if (colorMixMatch) {
       const color1 = colorMixMatch[1];
       const color2 = colorMixMatch[2];
-      const ratio = colorMixMatch[3] || '50%';
+      let ratio = colorMixMatch[3] || '0.5';
       const colorSpace = colorMixMatch[4] || 'lab';
-      value = router.func('colorMix', color1, color2, ratio, colorSpace);
+      
+      // Clean up quotes from ratio if present
+      ratio = ratio.replace(/['"]/g, '');
+      
+      // Convert percentage string to numeric if needed
+      if (ratio.includes('%')) {
+        ratio = (parseFloat(ratio) / 100).toString();
+      }
+      
+      value = router.func('colorMix', color1, color2, parseFloat(ratio), colorSpace);
     } else if (relativeMatch) {
       value = router.func('relativeTo', relativeMatch[1], relativeMatch[2]);
     } else if (minContrastMatch) {
@@ -267,12 +276,10 @@ document.getElementById('define-color')?.addEventListener('click', () => {
       router.define(keyInput.value, value);
     }
     
-    if (router.mode === 'auto') {
-      renderPalettes();
-      renderOutput();
-      renderColorDemo();
-      renderSVGVisualization();
-    }
+    renderPalettes();
+    renderOutput();
+    renderColorDemo();
+    renderSVGVisualization();
   } catch (e) {
     logEvent(`<span class="text-red-500">ERROR:</span> ${(e as Error).message}`);
   }
@@ -284,45 +291,6 @@ document.getElementById('clear-form')?.addEventListener('click', () => {
   if (keyInput) keyInput.value = '';
   if (valueInput) valueInput.value = '';
   logEvent('Form cleared');
-});
-
-document.getElementById('register-fn-btn')?.addEventListener('click', () => {
-  const nameInput = document.getElementById('fn-name') as HTMLInputElement;
-  const bodyInput = document.getElementById('fn-body') as HTMLInputElement;
-  if (!nameInput?.value || !bodyInput?.value) return;
-  
-  try {
-    const fn = new Function('culori', `return ${bodyInput.value}`)(culori);
-    router.registerFunction(nameInput.value, fn);
-  } catch (e) {
-    logEvent(`<span class="text-red-500">ERROR creating function:</span> ${(e as Error).message}`);
-  }
-});
-
-document.querySelectorAll('input[name="update-mode"]').forEach(radio => {
-  radio.addEventListener('change', (e) => {
-    const target = e.target as HTMLInputElement;
-    router.mode = target.id === 'mode-auto' ? 'auto' : 'batch';
-    const flushBtn = document.getElementById('flush-btn') as HTMLButtonElement;
-    if (flushBtn) flushBtn.disabled = router.mode === 'auto';
-    
-    if (router.mode === 'auto' && router.batchQueueSize > 0) {
-      router.flush();
-      renderPalettes();
-      renderOutput();
-      renderColorDemo();
-      renderSVGVisualization();
-    }
-    logEvent(`Mode switched to '${router.mode}'.`);
-  });
-});
-
-document.getElementById('flush-btn')?.addEventListener('click', () => {
-  router.flush();
-  renderPalettes();
-  renderOutput();
-  renderColorDemo();
-  renderSVGVisualization();
 });
 
 document.querySelectorAll('.tab-button').forEach(btn => {
@@ -421,33 +389,33 @@ function setupInitialState(): void {
 
   // Base colors palette - foundation colors
   router.createPalette('base');
-  router.define('base.white', '#ffffff');
-  router.define('base.black', '#202126');
-  router.define('base.blue', '#0066cc');
-  router.define('base.orange', '#ff6600');
+  router.define('base.light', '#ffffff');
+  router.define('base.dark', '#202126');
+  router.define('base.accent', '#0066cc');
+  router.define('base.attention', '#ff6600');
 
   // --- SCALE (was bold-colors) PALETTE DEMO ---
   router.createPalette('scale');
-  router.define('scale.0', router.ref('base.blue'));
-  router.define('scale.4', router.ref('base.orange'));
+  router.define('scale.0', router.ref('base.accent'));
+  router.define('scale.4', router.ref('base.attention'));
 
 
-  router.define('scale.1', router.func('colorMix', 'scale.0', 'scale.4', '25%', 'oklab'));
-  router.define('scale.2', router.func('colorMix', 'scale.0', 'scale.4', '50%', 'oklab'));
-  router.define('scale.3', router.func('colorMix', 'scale.0', 'scale.4', '75%', 'oklab'));
+  router.define('scale.1', router.func('colorMix', 'scale.0', 'scale.4', 0.25, 'oklab'));
+  router.define('scale.2', router.func('colorMix', 'scale.0', 'scale.4', 0.5, 'oklab'));
+  router.define('scale.3', router.func('colorMix', 'scale.0', 'scale.4', 0.75, 'oklab'));
 
-  // --- RAMP (was scale) palette (0-900) - systematic neutral ramp based on base.black
+  // --- RAMP (was scale) palette (0-900) - systematic neutral ramp based on base.dark
   router.createPalette('ramp');
-  router.define('ramp.0', router.ref('base.white'));  // Pure white
-  router.define('ramp.900', router.ref('base.black'));  // Darkest = base.black
-  router.define('ramp.800', router.func('lighten', 'ramp.900', 0.1));
-  router.define('ramp.700', router.func('lighten', 'ramp.900', 0.2));
-  router.define('ramp.600', router.func('lighten', 'ramp.900', 0.3));
-  router.define('ramp.500', router.func('lighten', 'ramp.900', 0.4));
-  router.define('ramp.400', router.func('lighten', 'ramp.900', 0.5));
-  router.define('ramp.300', router.func('lighten', 'ramp.900', 0.6));
-  router.define('ramp.200', router.func('lighten', 'ramp.900', 0.7));
-  router.define('ramp.100', router.func('lighten', 'ramp.900', 0.8));
+  router.define('ramp.0', router.ref('base.light'));  // Pure light
+  router.define('ramp.900', router.ref('base.dark'));  // Pure dark
+  router.define('ramp.800', router.func('colorMix', 'ramp.0', 'ramp.900', 0.8, 'oklab'));
+  router.define('ramp.700', router.func('colorMix', 'ramp.0', 'ramp.900', 0.7, 'oklab'));
+  router.define('ramp.600', router.func('colorMix', 'ramp.0', 'ramp.900', 0.6, 'oklab'));
+  router.define('ramp.500', router.func('colorMix', 'ramp.0', 'ramp.900', 0.5, 'oklab'));
+  router.define('ramp.400', router.func('colorMix', 'ramp.0', 'ramp.900', 0.4, 'oklab'));
+  router.define('ramp.300', router.func('colorMix', 'ramp.0', 'ramp.900', 0.3, 'oklab'));
+  router.define('ramp.200', router.func('colorMix', 'ramp.0', 'ramp.900', 0.2, 'oklab'));
+  router.define('ramp.100', router.func('colorMix', 'ramp.0', 'ramp.900', 0.1, 'oklab'));
 
   // Card palette - reference scale keys directly, do not extend
   router.createPalette('card');
@@ -457,15 +425,13 @@ function setupInitialState(): void {
   router.define('card.onInteraction', router.func('bestContrastWith', 'card.interaction', 'ramp'));
   
   router.define('card.warning', router.func('closestColor', '#ff0000', 'scale', 0));
-  
   router.define('card.onWarning', router.func('bestContrastWith', 'card.warning', 'ramp'));
 
   router.flush();
-  logEvent("• BASE: Foundation colors (white, black, blue, orange)");
-  logEvent("• SCALE: Systematic neutral scale - 900=base.black, others lighten progressively");
+  logEvent("• BASE: Foundation colors (light, dark, accent, attention)");
+  logEvent("• SCALE: Systematic neutral scale - 900=base.dark, others lighten progressively");
   logEvent("• CARD: Essential theming (background/onBackground, interaction/onInteraction, warning/onWarning)");
-  logEvent("Card palette shows proper background/text pairing using bestContrastWith!");
-  logEvent("Try changing base.black to see entire scale update automatically!");
+  logEvent("Try changing base.dark to see entire scale update automatically!");
   
   renderPalettes();
   renderOutput();

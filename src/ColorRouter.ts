@@ -506,14 +506,15 @@ export class ColorRouter {
     });
 
     // Color mixing function
-    this.registerFunction('colorMix', (color1: string, color2: string, ratio = '50%', colorSpace = 'lab'): string => {
+    this.registerFunction('colorMix', (color1: string, color2: string, ratio: number | string = 0.5, colorSpace = 'lab'): string => {
       try {
         const parsed1 = parse(color1);
         const parsed2 = parse(color2);
         if (!parsed1 || !parsed2) return color1;
         
         const interpolator = interpolate([parsed1, parsed2], colorSpace);
-        const ratioNum = parseFloat(ratio) / 100;
+        // Handle both numeric (0-1) and percentage string inputs
+        const ratioNum = typeof ratio === 'string' ? parseFloat(ratio) / 100 : ratio;
         return formatHex(interpolator(ratioNum));
       } catch (e) {
         return color1;

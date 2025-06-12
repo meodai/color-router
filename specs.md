@@ -110,7 +110,7 @@ router.define('layout.border',
 
 // CSS color functions
 router.define('accent', 
-  router.func('colorMix', 'brand.primary', '#f00', '60%', 'lab')
+  router.func('colorMix', 'brand.primary', '#f00', 0.6, 'lab')
 )
 router.define('hover-state', 
   router.func('relativeTo', 'brand.primary', 'r g b / 0.8') // CSS relative color syntax
@@ -345,7 +345,7 @@ const jsonCapabilities: RendererCapabilities = {
 ```typescript
 // Original definition with color space
 router.define('accent', 
-  router.func('colorMix', 'brand.primary', '#f00', '60%', 'oklch')
+  router.func('colorMix', 'brand.primary', '#f00', 0.6, 'oklch')
 )
 
 // CSS Modern renderer output:
