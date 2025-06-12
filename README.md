@@ -201,22 +201,6 @@ $card-primary-text: $scale-0;
 - `registerFunctionRenderer(name, renderer)` - Add custom function renderer
 - Format-specific function rendering for CSS, SCSS, and JSON outputs
 
-## Technology Stack
-
-- **TypeScript** - Type-safe development with official Culori types
-- **Vite** - Fast build tool and dev server
-- **Culori** - Advanced color manipulation library with full TypeScript support
-- **Tailwind CSS** - Styling for demo interface
-
-## Project Structure
-
-```text
-src/
-├── ColorRouter.ts      # Main color routing logic
-├── ColorRenderer.ts    # Format-specific rendering
-└── main.ts            # Demo UI and initialization
-```
-
 ## License
 
 MIT
