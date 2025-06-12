@@ -599,6 +599,17 @@ export class ColorRouter {
     return this.#valueToString(value);
   }
 
+  // Get raw value for editing (without quotes or formatting)
+  getRawValue(value: ColorDefinition): string {
+    if (value instanceof ColorReference) return `ref('${value.key}')`;
+    if (value instanceof ColorFunction) {
+      const fnName = [...this.#customFunctions.entries()].find(([_, fn]) => fn === value.fn)?.[0] || value.fn.name.replace('bound ', '');
+      const args = value.args.map(a => typeof a === 'string' ? `'${a}'` : a).join(', ');
+      return `${fnName}(${args})`;
+    }
+    return value; // Return raw value without quotes
+  }
+
   get mode(): 'auto' | 'batch' {
     return this.#mode;
   }

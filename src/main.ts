@@ -366,7 +366,7 @@ document.addEventListener('click', (e) => {
 
 function editColor(key: string): void {
   const definition = router.getDefinitionForKey(key);
-  const currentValue = router.valueToString(definition);
+  const currentValue = router.getRawValue(definition); // Use getRawValue for editing (no quotes)
   
   // Pre-fill the form with current values
   const keyInput = document.getElementById('color-key') as HTMLInputElement;
