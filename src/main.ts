@@ -172,7 +172,7 @@ function renderSVGVisualization(): void {
     
     const svgRenderer = new SVGRenderer(router, {
       showConnections,
-      gap: 25,
+      gap: 25,  
       padding: 0.15,
       fontSize: 12,
       strokeWidth: 2,
@@ -383,6 +383,38 @@ function editColor(key: string): void {
   logEvent(`Editing color '${key}' - current value: ${currentValue}`);
 }
 
+// Register a function to find the closest color in a palette to a given color
+router.registerFunction('closestColor', (target: string, paletteName: string, minDistance: number = 0): string => {
+  const keys = router.getAllKeysForPalette(paletteName);
+  if (!keys.length) return '#transparent';
+  
+  const targetColor = culori.parse(target);
+  if (!targetColor) return '#transparent';
+  
+  let closestKey = '';
+  let closestDist = Infinity;
+
+  const differenceFunction = culori.differenceCiede2000(1, 1, 1);
+
+  for (const key of keys) {
+    const resolvedColor = router.resolve(key);
+    const color = culori.parse(resolvedColor);
+    
+    if (!color) continue;
+    
+    const dist = differenceFunction(targetColor, color);
+    
+    if (dist < closestDist && dist >= minDistance) {
+      closestDist = dist;
+      closestKey = key;
+    }
+  }
+  
+  const result = closestKey ? router.resolve(closestKey) : '';
+  
+  return result;
+});
+
 // --- Initial State & Demo Setup ---
 function setupInitialState(): void {
   logEvent("Initializing ColorRouter demo...");
@@ -423,12 +455,12 @@ function setupInitialState(): void {
   router.define('card.onBackground', router.func('bestContrastWith', 'card.background', 'ramp'));
   router.define('card.interaction', router.ref('scale.0'));
   router.define('card.onInteraction', router.func('bestContrastWith', 'card.interaction', 'ramp'));
-  router.define('card.warning', router.ref('scale.4'));
+  
+  router.define('card.warning', router.func('closestColor', '#ff0000', 'scale', 0));
+  
   router.define('card.onWarning', router.func('bestContrastWith', 'card.warning', 'ramp'));
 
   router.flush();
-  
-  logEvent("Simplified demo with 3 core palettes created:");
   logEvent("• BASE: Foundation colors (white, black, blue, orange)");
   logEvent("• SCALE: Systematic neutral scale - 900=base.black, others lighten progressively");
   logEvent("• CARD: Essential theming (background/onBackground, interaction/onInteraction, warning/onWarning)");
