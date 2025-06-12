@@ -474,7 +474,7 @@ function setupInitialState(): void {
   router.define('card.interaction', router.ref('scale.0'));
   router.define('card.onInteraction', router.func('bestContrastWith', 'card.interaction', 'ramp'));
   
-  router.define('card.warning', router.func('closestColor', '#ff0000', 'scale', 0));
+  router.define('card.warning', router.func('closestColor', 'red', 'scale', 0));
   router.define('card.onWarning', router.func('bestContrastWith', 'card.warning', 'ramp'));
 
   router.flush();
