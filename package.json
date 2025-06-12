@@ -1,0 +1,53 @@
+{
+  "name": "color-router",
+  "version": "1.0.0",
+  "description": "Advanced TypeScript color management system with reactive routing, palette inheritance, and multiple output formats",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run build:lib && npm run build:demo",
+    "build:lib": "tsc -p tsconfig.json && vite build --mode lib",
+    "build:demo": "vite build --mode demo",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.dev.json",
+    "prepublishOnly": "npm run build:lib"
+  },
+  "keywords": [
+    "color",
+    "css",
+    "scss",
+    "design-system",
+    "typescript",
+    "reactive",
+    "palette",
+    "color-management"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/culori": "^4.0.0",
+    "@types/node": "^24.0.1",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vite-plugin-dts": "^4.5.4"
+  },
+  "dependencies": {
+    "culori": "^4.0.0"
+  },
+  "peerDependencies": {
+    "culori": "^4.0.0"
+  }
+}

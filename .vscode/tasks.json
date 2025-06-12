@@ -1,0 +1,73 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "dev",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"dev"
+			],
+			"group": "build",
+			"isBackground": true,
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "build",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "preview",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"preview"
+			],
+			"group": "build",
+			"isBackground": true,
+			"dependsOn": "build"
+		},
+		{
+			"label": "build:lib",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build:lib"
+			],
+			"group": "build",
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "build:demo",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"build:demo"
+			],
+			"group": "build",
+			"problemMatcher": [
+				"$tsc"
+			]
+		}
+	]
+}
