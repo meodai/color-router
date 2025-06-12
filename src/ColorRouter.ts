@@ -1,4 +1,12 @@
-import { formatHex, parse, wcagContrast, interpolate, converter } from 'culori';
+import { formatHex, parse } from 'culori';
+import { 
+  bestContrastWith, 
+  colorMix, 
+  relativeTo, 
+  minContrastWith, 
+  lighten, 
+  darken 
+} from './colorFunctions';
 
 // --- TYPE DEFINITIONS ---
 
@@ -444,147 +452,13 @@ export class ColorRouter {
   
   // Register built-in functions during construction
   #registerBuiltinFunctions(): void {
-    // Best contrast function
-    this.registerFunction('bestContrastWith', (targetColor: string, paletteName?: string): string => {
-      if (!parse(targetColor)) return '#000000';
-      
-      // If no palette specified, use simple black/white contrast
-      if (!paletteName) {
-        return wcagContrast('#fff', targetColor) >= wcagContrast('#000', targetColor) ? '#ffffff' : '#000000';
-      }
-      
-      // Get all colors from the specified palette
-      if (!this.#palettes.has(paletteName)) {
-        console.warn(`Palette "${paletteName}" not found, falling back to black/white`);
-        return wcagContrast('#fff', targetColor) >= wcagContrast('#000', targetColor) ? '#ffffff' : '#000000';
-      }
-      
-      const paletteKeys = this.getAllKeysForPalette(paletteName);
-      if (paletteKeys.length === 0) {
-        console.warn(`Palette "${paletteName}" has no colors, falling back to black/white`);
-        return wcagContrast('#fff', targetColor) >= wcagContrast('#000', targetColor) ? '#ffffff' : '#000000';
-      }
-      
-      let bestColor: string | null = null;
-      let bestContrast = 0;
-      
-      for (const key of paletteKeys) {
-        try {
-          const candidateColor = this.resolve(key);
-          if (candidateColor && candidateColor !== 'invalid') {
-            const contrast = wcagContrast(candidateColor, targetColor);
-            if (contrast > bestContrast) {
-              bestContrast = contrast;
-              bestColor = candidateColor;
-            }
-          }
-        } catch (e) {
-          // Skip invalid colors
-          continue;
-        }
-      }
-      
-      // Return the best color found, or fallback to first valid color if no good contrast found
-      if (bestColor) {
-        return bestColor;
-      }
-      
-      // If no colors had good contrast, just return the first valid color
-      for (const key of paletteKeys) {
-        try {
-          const candidateColor = this.resolve(key);
-          if (candidateColor && candidateColor !== 'invalid') {
-            return candidateColor;
-          }
-        } catch (e) {
-          continue;
-        }
-      }
-      
-      // Ultimate fallback if palette has no valid colors
-      return '#000000';
-    });
-
-    // Color mixing function
-    this.registerFunction('colorMix', (color1: string, color2: string, ratio: number | string = 0.5, colorSpace = 'lab'): string => {
-      try {
-        const parsed1 = parse(color1);
-        const parsed2 = parse(color2);
-        if (!parsed1 || !parsed2) return color1;
-        
-        const interpolator = interpolate([parsed1, parsed2], colorSpace);
-        // Handle both numeric (0-1) and percentage string inputs
-        const ratioNum = typeof ratio === 'string' ? parseFloat(ratio) / 100 : ratio;
-        return formatHex(interpolator(ratioNum));
-      } catch (e) {
-        return color1;
-      }
-    });
-
-    // Relative color function
-    this.registerFunction('relativeTo', (baseColor: string, transform: string): string => {
-      try {
-        const parsed = parse(baseColor);
-        if (!parsed) return baseColor;
-        
-        // Simple implementation for relative color syntax
-        if (transform.includes('/ 0.8')) {
-          const withAlpha = { ...parsed, alpha: 0.8 };
-          return formatHex(withAlpha);
-        }
-        return formatHex(parsed);
-      } catch (e) {
-        return baseColor;
-      }
-    });
-
-    // Minimum contrast function
-    this.registerFunction('minContrastWith', (targetColor: string, minRatio = 1.5): string => {
-      if (!parse(targetColor)) return '#000000';
-      const whiteContrast = wcagContrast('#fff', targetColor);
-      const blackContrast = wcagContrast('#000', targetColor);
-      
-      if (whiteContrast >= minRatio) return '#ffffff';
-      if (blackContrast >= minRatio) return '#000000';
-      
-      return whiteContrast >= blackContrast ? '#ffffff' : '#000000';
-    });
-
-    // Lighten function
-    this.registerFunction('lighten', (color: string, amount: number): string => {
-      try {
-        const c = parse(color);
-        if (!c) return color;
-        
-        const toHsl = converter('hsl');
-        const hslColor = toHsl(c);
-        if (hslColor && typeof hslColor.l === 'number') {
-          hslColor.l = Math.min(1, hslColor.l + amount);
-          return formatHex(hslColor);
-        }
-        return color;
-      } catch (e) {
-        return color;
-      }
-    });
-
-    // Darken function
-    this.registerFunction('darken', (color: string, amount: number): string => {
-      try {
-        const c = parse(color);
-        if (!c) return color;
-        
-        const toHsl = converter('hsl');
-        const hslColor = toHsl(c);
-        if (hslColor && typeof hslColor.l === 'number') {
-          hslColor.l = Math.max(0, hslColor.l - amount);
-          return formatHex(hslColor);
-        }
-        return color;
-      } catch (e) {
-        return color;
-      }
-    });
+    // Register all built-in functions from the colorFunctions module
+    this.registerFunction('bestContrastWith', bestContrastWith.bind(this));
+    this.registerFunction('colorMix', colorMix);
+    this.registerFunction('relativeTo', relativeTo);
+    this.registerFunction('minContrastWith', minContrastWith);
+    this.registerFunction('lighten', lighten);
+    this.registerFunction('darken', darken);
   }
 
   // --- PUBLIC GETTERS FOR UI ---

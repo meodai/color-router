@@ -1,4 +1,12 @@
 import { ColorRouter, ColorReference, ColorFunction, ColorDefinition } from './ColorRouter';
+import { 
+  bestContrastWithRenderers,
+  colorMixRenderers,
+  relativeToRenderers,
+  minContrastWithRenderers,
+  lightenRenderers,
+  darkenRenderers
+} from './colorFunctions';
 
 export type RenderFormat = 'css-variables' | 'scss' | 'json';
 export type FunctionRenderer = (args: any[]) => string;
@@ -25,52 +33,21 @@ export class ColorRenderer {
 
   // Register built-in function renderers for different formats
   #registerBuiltinRenderers(): void {
-    // CSS format renderers
-    this.registerFunctionRenderer('colorMix', (args: any[]): string => {
-      const [color1, color2, ratio = 0.5, colorSpace = 'lab'] = args;
-      // Convert ratio to percentage if it's a decimal
-      const ratioNum = typeof ratio === 'string' && ratio.includes('%') ? parseFloat(ratio) : parseFloat(ratio) * 100;
-      // CSS color-mix syntax: color-mix(in space, color1 percentage, color2)
-      // Our colorMix(color1, color2, ratio) means: ratio% of color2 mixed with color1
-      // So we need to use (100 - ratio)% for color1 and ratio% for color2
-      const color1Percentage = 100 - ratioNum;
-      return `color-mix(in ${colorSpace}, ${color1} ${color1Percentage}%, ${color2})`;
-    });
+    // Register all renderers for the current format
+    const rendererSets = [
+      { name: 'bestContrastWith', renderers: bestContrastWithRenderers },
+      { name: 'colorMix', renderers: colorMixRenderers },
+      { name: 'relativeTo', renderers: relativeToRenderers },
+      { name: 'minContrastWith', renderers: minContrastWithRenderers },
+      { name: 'lighten', renderers: lightenRenderers },
+      { name: 'darken', renderers: darkenRenderers }
+    ];
 
-    this.registerFunctionRenderer('lighten', (args: any[]): string => {
-      const [color, amount] = args;
-      const percentage = Math.round(parseFloat(amount) * 100);
-      return `color-mix(in oklch, ${color} ${100 - percentage}%, white)`;
-    });
-
-    this.registerFunctionRenderer('darken', (args: any[]): string => {
-      const [color, amount] = args;
-      const percentage = Math.round(parseFloat(amount) * 100);
-      return `color-mix(in oklch, ${color} ${100 - percentage}%, black)`;
-    });
-
-    // SCSS format renderers (using SCSS functions)
-    if (this.#format === 'scss') {
-      this.registerFunctionRenderer('lighten', (args: any[]): string => {
-        const [color, amount] = args;
-        const percentage = Math.round(parseFloat(amount) * 100);
-        return `lighten(${color}, ${percentage}%)`;
-      });
-
-      this.registerFunctionRenderer('darken', (args: any[]): string => {
-        const [color, amount] = args;
-        const percentage = Math.round(parseFloat(amount) * 100);
-        return `darken(${color}, ${percentage}%)`;
-      });
-
-      this.registerFunctionRenderer('colorMix', (args: any[]): string => {
-        const [color1, color2, ratio = 0.5] = args;
-        const weight = typeof ratio === 'string' && ratio.includes('%') ? parseFloat(ratio) : parseFloat(ratio) * 100;
-        // SCSS mix(color1, color2, weight) means weight% of color1 mixed with color2
-        // Our colorMix(color1, color2, ratio) means ratio% of color2 mixed with color1
-        // So we use: mix(color2, color1, weight) to get weight% of color2 mixed with color1
-        return `mix(${color2}, ${color1}, ${weight}%)`;
-      });
+    for (const { name, renderers } of rendererSets) {
+      const renderer = renderers[this.#format];
+      if (renderer) {
+        this.registerFunctionRenderer(name, renderer);
+      }
     }
   }
 
@@ -125,7 +102,14 @@ export class ColorRenderer {
         return arg;
       });
 
-      return renderer(renderedArgs);
+      const result = renderer(renderedArgs);
+      
+      // If renderer returns empty string, fall back to computed value
+      if (result === '') {
+        return this.#router.resolve(key);
+      }
+      
+      return result;
     } catch (e) {
       // If rendering fails, fall back to resolved value
       console.warn(`Failed to render function ${functionName}:`, e);

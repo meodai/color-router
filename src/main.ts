@@ -2,12 +2,48 @@ import * as culori from 'culori';
 import { ColorRouter } from './ColorRouter';
 import { ColorRenderer } from './ColorRenderer';
 import { SVGRenderer } from './SVGRenderer';
+import { 
+  bestContrastWithRenderers,
+  colorMixRenderers,
+  relativeToRenderers,
+  minContrastWithRenderers,
+  lightenRenderers,
+  darkenRenderers
+} from './colorFunctions';
 
 // --- UI & DEMO LOGIC ---
 const router = new ColorRouter();
 
 // Inject ColorRenderer to avoid circular imports
 router.setColorRenderer(ColorRenderer);
+
+// Register function renderers for all output formats
+function registerAllFunctionRenderers() {
+  const rendererSets = [
+    { name: 'bestContrastWith', renderers: bestContrastWithRenderers },
+    { name: 'colorMix', renderers: colorMixRenderers },
+    { name: 'relativeTo', renderers: relativeToRenderers },
+    { name: 'minContrastWith', renderers: minContrastWithRenderers },
+    { name: 'lighten', renderers: lightenRenderers },
+    { name: 'darken', renderers: darkenRenderers }
+  ];
+
+  // Register renderers for all formats
+  const formats: ('css-variables' | 'scss' | 'json')[] = ['css-variables', 'scss', 'json'];
+  
+  formats.forEach(format => {
+    const renderer = router.createRenderer(format);
+    rendererSets.forEach(({ name, renderers }) => {
+      const formatRenderer = renderers[format];
+      if (formatRenderer) {
+        renderer.registerFunctionRenderer(name, formatRenderer);
+      }
+    });
+  });
+}
+
+// Register all function renderers
+registerAllFunctionRenderers();
 
 function logEvent(message: string): void {
   const container = document.getElementById('event-log-container');
@@ -394,6 +430,19 @@ function setupInitialState(): void {
   router.define('base.accent', '#0066cc');
   router.define('base.attention', '#ff6600');
 
+  // --- RENDERER DEMONSTRATION PALETTE ---
+  router.createPalette('demo');
+  router.define('demo.primary', '#3498db');
+  router.define('demo.secondary', '#e74c3c');
+  
+  // Demonstrate all function types with their renderers
+  router.define('demo.mixed', router.func('colorMix', 'demo.primary', 'demo.secondary', 0.3, 'lab'));
+  router.define('demo.lighter', router.func('lighten', 'demo.primary', 0.2));
+  router.define('demo.darker', router.func('darken', 'demo.primary', 0.2));
+  router.define('demo.contrast', router.func('bestContrastWith', 'demo.primary', 'ramp'));
+  router.define('demo.relative', router.func('relativeTo', 'demo.primary', 'r g b / 0.7'));
+  router.define('demo.minContrast', router.func('minContrastWith', 'demo.primary', 4.5));
+
   // --- SCALE (was bold-colors) PALETTE DEMO ---
   router.createPalette('scale');
   router.define('scale.0', router.ref('base.accent'));
@@ -428,7 +477,12 @@ function setupInitialState(): void {
   router.define('card.onWarning', router.func('bestContrastWith', 'card.warning', 'ramp'));
 
   router.flush();
+  
+  // Demonstrate renderer outputs
+  logRendererComparison();
+  
   logEvent("• BASE: Foundation colors (light, dark, accent, attention)");
+  logEvent("• DEMO: Function demonstration (colorMix, lighten, darken, bestContrastWith, relativeTo, minContrastWith)");
   logEvent("• SCALE: Systematic neutral scale - 900=base.dark, others lighten progressively");
   logEvent("• CARD: Essential theming (background/onBackground, interaction/onInteraction, warning/onWarning)");
   logEvent("Try changing base.dark to see entire scale update automatically!");
@@ -437,6 +491,31 @@ function setupInitialState(): void {
   renderOutput();
   renderColorDemo();
   renderSVGVisualization();
+}
+
+function logRendererComparison(): void {
+  logEvent("🔧 RENDERER COMPARISON:");
+  
+  const formats: ('css-variables' | 'scss' | 'json')[] = ['css-variables', 'scss', 'json'];
+  
+  formats.forEach(format => {
+    const renderer = router.createRenderer(format);
+    const output = renderer.render();
+    
+    // Log a sample of the renderer output
+    const lines = output.split('\n').slice(0, 8).join('\n');
+    logEvent(`<strong>${format.toUpperCase()}:</strong><br><code style="font-size: 11px; color: #666; white-space: pre-wrap;">${lines}...</code>`);
+  });
+  
+  // Also log some specific variables for debugging
+  const cssRenderer = router.createRenderer('css-variables');
+  const cssOutput = cssRenderer.render();
+  const cardOnInteractionMatch = cssOutput.match(/--card-onInteraction:\s*([^;]+);/);
+  if (cardOnInteractionMatch) {
+    logEvent(`🎯 CARD TEXT COLOR: --card-onInteraction: ${cardOnInteractionMatch[1]}`);
+  } else {
+    logEvent(`⚠️  --card-onInteraction not found in CSS output`);
+  }
 }
 
 router.on('change', (e) => {
