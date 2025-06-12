@@ -142,21 +142,19 @@ function renderColorDemo(): void {
     // Create demo component using the simplified card palette
     container.innerHTML = `
       <!-- Card Palette Demo -->
-      <div class="p-6 rounded-lg border shadow-sm" style="background-color: var(--card-background, #ffffff); border-color: var(--card-interaction, #0066cc); color: var(--card-onBackground, #0f172a);">
+      <div class="p-6 rounded-lg border shadow-sm mb-8" style="background-color: var(--card-background, #ffffff); border-color: var(--card-interaction, #0066cc); color: var(--card-onBackground, #0f172a);">
         <h3 class="text-xl font-medium mb-3">Simplified Card Component</h3>
         <p class="text-sm mb-4 opacity-75">This card uses only 4 essential colors: background, onBackground, interaction, and onInteraction.</p>
-        
         <div class="flex flex-wrap gap-2 mb-4">
           <button class="px-4 py-2 text-sm font-medium rounded transition-colors" style="background-color: var(--card-interaction, #0066cc); color: var(--card-onInteraction, #ffffff);">Primary Action</button>
           <button class="px-3 py-2 text-sm font-medium rounded border transition-colors" style="border-color: var(--card-interaction, #0066cc); color: var(--card-interaction, #0066cc); background-color: transparent;">Secondary</button>
         </div>
-        
         <div class="text-xs space-y-1 opacity-75">
           <p><strong>Color System:</strong></p>
           <p>• Background: <code>ref('scale.0')</code> → <code>var(--card-background)</code></p>
           <p>• On Background: <code>bestContrastWith('card.background', 'scale')</code> → <code>var(--card-onBackground)</code></p>
-          <p>• Interaction: <code>ref('base.blue')</code> → <code>var(--card-interaction)</code></p>
-          <p>• On Interaction: <code>bestContrastWith('base.blue', 'scale')</code> → <code>var(--card-onInteraction)</code></p>
+          <p>• Interaction: <code>ref('bold-colors.0')</code> → <code>var(--card-interaction)</code></p>
+          <p>• On Interaction: <code>bestContrastWith('bold-colors.0', 'scale')</code> → <code>var(--card-onInteraction)</code></p>
         </div>
       </div>
     `;
@@ -396,27 +394,37 @@ function setupInitialState(): void {
   router.define('base.blue', '#0066cc');
   router.define('base.orange', '#ff6600');
 
-  // Scale palette (0-900) - systematic neutral scale based on base.black
+  // --- SCALE (was bold-colors) PALETTE DEMO ---
   router.createPalette('scale');
-  router.define('scale.0', router.ref('base.white'));  // Pure white
-  router.define('scale.900', router.ref('base.black'));  // Darkest = base.black
-  router.define('scale.800', router.func('lighten', 'scale.900', 0.1));
-  router.define('scale.700', router.func('lighten', 'scale.900', 0.2));
-  router.define('scale.600', router.func('lighten', 'scale.900', 0.3));
-  router.define('scale.500', router.func('lighten', 'scale.900', 0.4));
-  router.define('scale.400', router.func('lighten', 'scale.900', 0.5));
-  router.define('scale.300', router.func('lighten', 'scale.900', 0.6));
-  router.define('scale.200', router.func('lighten', 'scale.900', 0.7));
-  router.define('scale.100', router.func('lighten', 'scale.900', 0.8));
+  router.define('scale.0', router.ref('base.blue'));
+  router.define('scale.4', router.ref('base.orange'));
 
-  // Card palette - simplified to essential background/text pairs
+
+  router.define('scale.1', router.func('colorMix', 'scale.0', 'scale.4', '25%', 'oklab'));
+  router.define('scale.2', router.func('colorMix', 'scale.0', 'scale.4', '50%', 'oklab'));
+  router.define('scale.3', router.func('colorMix', 'scale.0', 'scale.4', '75%', 'oklab'));
+
+  // --- RAMP (was scale) palette (0-900) - systematic neutral ramp based on base.black
+  router.createPalette('ramp');
+  router.define('ramp.0', router.ref('base.white'));  // Pure white
+  router.define('ramp.900', router.ref('base.black'));  // Darkest = base.black
+  router.define('ramp.800', router.func('lighten', 'ramp.900', 0.1));
+  router.define('ramp.700', router.func('lighten', 'ramp.900', 0.2));
+  router.define('ramp.600', router.func('lighten', 'ramp.900', 0.3));
+  router.define('ramp.500', router.func('lighten', 'ramp.900', 0.4));
+  router.define('ramp.400', router.func('lighten', 'ramp.900', 0.5));
+  router.define('ramp.300', router.func('lighten', 'ramp.900', 0.6));
+  router.define('ramp.200', router.func('lighten', 'ramp.900', 0.7));
+  router.define('ramp.100', router.func('lighten', 'ramp.900', 0.8));
+
+  // Card palette - reference scale keys directly, do not extend
   router.createPalette('card');
-  router.define('card.background', router.ref('scale.0'));
-  router.define('card.onBackground', router.func('bestContrastWith', 'card.background', 'scale'));
-  router.define('card.interaction', router.ref('base.blue'));
-  router.define('card.onInteraction', router.func('bestContrastWith', 'base.blue', 'scale'));
-  router.define('card.warning', router.ref('base.orange'));
-  router.define('card.onWarning', router.func('bestContrastWith', 'base.orange', 'scale'));
+  router.define('card.background', router.ref('ramp.0'));
+  router.define('card.onBackground', router.func('bestContrastWith', 'card.background', 'ramp'));
+  router.define('card.interaction', router.ref('scale.0'));
+  router.define('card.onInteraction', router.func('bestContrastWith', 'card.interaction', 'ramp'));
+  router.define('card.warning', router.ref('scale.4'));
+  router.define('card.onWarning', router.func('bestContrastWith', 'card.warning', 'ramp'));
 
   router.flush();
   
