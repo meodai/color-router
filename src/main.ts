@@ -435,14 +435,11 @@ function setupInitialState(): void {
   router.createPalette('ramp');
   router.define('ramp.0', router.ref('base.light'));  // Pure light
   router.define('ramp.900', router.ref('base.dark'));  // Pure dark
-  router.define('ramp.800', router.func('colorMix', 'ramp.0', 'ramp.900', 0.8, 'oklab'));
-  router.define('ramp.700', router.func('colorMix', 'ramp.0', 'ramp.900', 0.7, 'oklab'));
-  router.define('ramp.600', router.func('colorMix', 'ramp.0', 'ramp.900', 0.6, 'oklab'));
-  router.define('ramp.500', router.func('colorMix', 'ramp.0', 'ramp.900', 0.5, 'oklab'));
-  router.define('ramp.400', router.func('colorMix', 'ramp.0', 'ramp.900', 0.4, 'oklab'));
-  router.define('ramp.300', router.func('colorMix', 'ramp.0', 'ramp.900', 0.3, 'oklab'));
-  router.define('ramp.200', router.func('colorMix', 'ramp.0', 'ramp.900', 0.2, 'oklab'));
-  router.define('ramp.100', router.func('colorMix', 'ramp.0', 'ramp.900', 0.1, 'oklab'));
+  // Generate ramp.100 to ramp.800 using a loop
+  for (let i = 8; i >= 1; i--) {
+    const step = i * 0.1;
+    router.define(`ramp.${i}00`, router.func('colorMix', 'ramp.0', 'ramp.900', step, 'oklab'));
+  }
 
   // --- RENDERER DEMONSTRATION PALETTE ---
   router.createPalette('demo');
@@ -450,12 +447,12 @@ function setupInitialState(): void {
   router.define('demo.secondary', router.ref('base.attention'));
   
   // Demonstrate all function types with their renderers
-  router.define('demo.mixed', router.func('colorMix', 'demo.primary', 'demo.secondary', 0.3, 'lab'));
   router.define('demo.lighter', router.func('lighten', 'demo.primary', 0.2));
   router.define('demo.darker', router.func('darken', 'demo.primary', 0.2));
   router.define('demo.contrast', router.func('bestContrastWith', 'demo.primary', 'ramp'));
   router.define('demo.relative', router.func('relativeTo', 'demo.primary', 'r g b / 0.7'));
   router.define('demo.minContrast', router.func('minContrastWith', 'demo.primary', 'ramp', 2.5));
+  router.define('demo.mixed', router.func('colorMix', 'demo.secondary', 'demo.minContrast', 0.7, 'lab'));
 
   // --- SCALE (was bold-colors) PALETTE DEMO ---
   router.createPalette('scale');
