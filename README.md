@@ -83,6 +83,7 @@ npm run dev  # Start development server
 - `darken(color, amount)` - Darken a color by percentage
 - `relativeTo(color, palette)` - Make color relative to palette context
 - `minContrastWith(color, minRatio)` - Ensure minimum contrast ratio
+- `furthestFrom(palette)` - Find the color that is furthest apart from all other colors in a palette
 
 ## Build Commands
 

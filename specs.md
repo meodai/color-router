@@ -115,6 +115,11 @@ router.define('accent',
 router.define('hover-state', 
   router.func('relativeTo', 'brand.primary', 'r g b / 0.8') // CSS relative color syntax
 )
+
+// Color analysis functions
+router.define('isolatedColor', 
+  router.func('furthestFrom', 'brand') // Find the most isolated color in the brand palette
+)
 ```
 
 ### Reactive Updates

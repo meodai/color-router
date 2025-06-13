@@ -8,7 +8,8 @@ import {
   relativeToRenderers,
   minContrastWithRenderers,
   lightenRenderers,
-  darkenRenderers
+  darkenRenderers,
+  furthestFromRenderers
 } from './colorFunctions';
 
 // --- UI & DEMO LOGIC ---
@@ -25,7 +26,8 @@ function registerAllFunctionRenderers() {
     { name: 'relativeTo', renderers: relativeToRenderers },
     { name: 'minContrastWith', renderers: minContrastWithRenderers },
     { name: 'lighten', renderers: lightenRenderers },
-    { name: 'darken', renderers: darkenRenderers }
+    { name: 'darken', renderers: darkenRenderers },
+    { name: 'furthestFrom', renderers: furthestFromRenderers }
   ];
 
   // Register renderers for all formats
@@ -464,6 +466,9 @@ function setupInitialState(): void {
   router.define('scale.2', router.func('colorMix', 'scale.0', 'scale.4', 0.5, 'oklab'));
   router.define('scale.3', router.func('colorMix', 'scale.0', 'scale.4', 0.75, 'oklab'));
 
+  // Now that scale palette is created, add the furthest function demo
+  router.define('demo.furthest', router.func('furthestFrom', 'base'));
+
   // Card palette - reference scale keys directly, do not extend
   router.createPalette('card');
   router.define('card.background', router.ref('ramp.0'));
@@ -476,11 +481,16 @@ function setupInitialState(): void {
 
   router.flush();
   
+  // Debug: Check what furthestFrom actually returns
+  console.log('Scale palette keys:', router.getAllKeysForPalette('scale'));
+  console.log('Scale palette colors:', router.getAllKeysForPalette('scale').map(k => ({ key: k, color: router.resolve(k) })));
+  console.log('demo.furthest resolves to:', router.resolve('demo.furthest'));
+  
   // Demonstrate renderer outputs
   logRendererComparison();
   
   logEvent("• BASE: Foundation colors (light, dark, accent, attention)");
-  logEvent("• DEMO: Function demonstration (colorMix, lighten, darken, bestContrastWith, relativeTo, minContrastWith)");
+  logEvent("• DEMO: Function demonstration (colorMix, lighten, darken, bestContrastWith, relativeTo, minContrastWith, furthestFrom)");
   logEvent("• SCALE: Systematic neutral scale - 900=base.dark, others lighten progressively");
   logEvent("• CARD: Essential theming (background/onBackground, interaction/onInteraction, warning/onWarning)");
   logEvent("Try changing base.dark to see entire scale update automatically!");

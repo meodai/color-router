@@ -5,7 +5,8 @@ import {
   relativeTo, 
   minContrastWith, 
   lighten, 
-  darken 
+  darken,
+  furthestFrom
 } from './colorFunctions';
 
 // --- TYPE DEFINITIONS ---
@@ -459,6 +460,7 @@ export class ColorRouter {
     this.registerFunction('minContrastWith', minContrastWith.bind(this));
     this.registerFunction('lighten', lighten);
     this.registerFunction('darken', darken);
+    this.registerFunction('furthestFrom', furthestFrom.bind(this));
   }
 
   // --- PUBLIC GETTERS FOR UI ---

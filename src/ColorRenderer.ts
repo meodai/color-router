@@ -5,7 +5,8 @@ import {
   relativeToRenderers,
   minContrastWithRenderers,
   lightenRenderers,
-  darkenRenderers
+  darkenRenderers,
+  furthestFromRenderers
 } from './colorFunctions';
 
 export type RenderFormat = 'css-variables' | 'scss' | 'json';
@@ -40,7 +41,8 @@ export class ColorRenderer {
       { name: 'relativeTo', renderers: relativeToRenderers },
       { name: 'minContrastWith', renderers: minContrastWithRenderers },
       { name: 'lighten', renderers: lightenRenderers },
-      { name: 'darken', renderers: darkenRenderers }
+      { name: 'darken', renderers: darkenRenderers },
+      { name: 'furthestFrom', renderers: furthestFromRenderers }
     ];
 
     for (const { name, renderers } of rendererSets) {
