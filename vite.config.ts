@@ -36,8 +36,9 @@ export default defineConfig(({ mode }) => {
     // Demo build configuration
     return {
       base: '/visual-route/',
+      root: './demo',
       build: {
-        outDir: 'demo-dist',
+        outDir: '../demo-dist',
         emptyOutDir: true,
         rollupOptions: {
           input: resolve(__dirname, 'demo/index.html')
