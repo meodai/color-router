@@ -424,10 +424,49 @@ function setupInitialState(): void {
   logEvent('• SURFACE: Default UI surface colors (background, text, interaction, lines)');
   logEvent('Try changing base.dark to see entire scale update automatically!');
 
+  demonstrateDependencyGraph();
+
   renderPalettes();
   renderOutput();
   renderColorDemo();
   renderSVGVisualization();
+}
+
+function demonstrateDependencyGraph(): void {
+  logEvent('🔗 DEPENDENCY GRAPH ANALYSIS:');
+  
+  const depGraph = router.getDependencyGraph();
+  
+  // Show graph statistics
+  const allNodes = depGraph.getAllNodes();
+  logEvent(`📊 Graph contains ${allNodes.length} nodes`);
+  
+  // Demonstrate traversal algorithms
+  const basePrimaryDependents = depGraph.dfsTraversal('base.accent', false);
+  logEvent(`🌳 DFS traversal from 'base.accent': ${basePrimaryDependents.join(' → ')}`);
+  
+  // Show shortest path between colors
+  const path = depGraph.findShortestPath('base.accent', 'surface.onInteraction', false);
+  if (path) {
+    logEvent(`🎯 Shortest path from 'base.accent' to 'surface.onInteraction': ${path.join(' → ')}`);
+  }
+  
+  // Check for cycles
+  const hasCycles = depGraph.hasCycles();
+  logEvent(`🔄 Circular dependencies detected: ${hasCycles ? 'YES ⚠️' : 'NO ✅'}`);
+  
+  // Show node with highest connectivity
+  const nodeConnectivity = allNodes.map(node => ({
+    node,
+    inDegree: depGraph.getNodeDegree(node, true),
+    outDegree: depGraph.getNodeDegree(node, false)
+  }));
+  
+  const mostConnected = nodeConnectivity.reduce((max, current) => 
+    (current.inDegree + current.outDegree) > (max.inDegree + max.outDegree) ? current : max
+  );
+  
+  logEvent(`🔗 Most connected node: '${mostConnected.node}' (in: ${mostConnected.inDegree}, out: ${mostConnected.outDegree})`);
 }
 
 function logRendererComparison(): void {

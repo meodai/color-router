@@ -37,12 +37,12 @@ npm install color-router
 ### Usage
 
 ```typescript
-import { ColorRouter, ColorRenderer } from 'color-router';
+import { ColorRouter } from 'color-router';
+import { ColorRenderer } from 'color-router/renderers';
 
-// Create renderer and router
-const renderer = new ColorRenderer();
+// Create router and renderer
 const router = new ColorRouter();
-router.setColorRenderer(ColorRenderer); // Make sure ColorRenderer is available to the router
+const renderer = new ColorRenderer(router);
 
 // Create palette and define colors
 router.createPalette('base');
@@ -51,12 +51,11 @@ router.define('base.secondary', '#2ecc71');
 router.define('base.text', router.ref('base.primary'));
 router.define('base.background', router.func('bestContrastWith', 'base.text', 'base')); // Enhanced: search base palette
 
-// Get rendered colors
-// Get CSS variables output
-const cssRenderer = router.createRenderer('css-variables'); // Use the injected ColorRenderer
-const cssVars = cssRenderer.render();
+// Get rendered colors as CSS variables
+renderer.format = 'css-variables';
+const cssVars = renderer.render();
 console.log(cssVars);
-// Output: --base-primary: #3498db; --base-secondary: #2ecc71; --base-text: #3498db; --base-background: #ffffff;
+// Output: --base-primary: #3498db; --base-secondary: #2ecc71; --base-text: var(--base-primary); --base-background: #ffffff;
 ```
 
 ### Local Development
@@ -67,6 +66,43 @@ cd color-router
 npm install
 npm run dev  # Start development server
 ```
+
+## Project Structure
+
+The Color Router System is organized into clear, modular components:
+
+```txt
+src/
+├── router/                    # Core routing and dependency management
+│   ├── ColorRouter.ts        # Main orchestrator class
+│   ├── DependencyGraph.ts    # Advanced dependency tracking with graph algorithms
+│   ├── PaletteManager.ts     # Palette operations and inheritance
+│   ├── errors.ts             # Error classes (CircularDependencyError, etc.)
+│   └── index.ts              # Router module exports
+├── renderers/                 # Output format renderers
+│   ├── ColorRenderer.ts      # CSS, SCSS, JSON output renderer
+│   ├── SVGRenderer.ts        # SVG visualization renderer
+│   ├── TableViewRenderer.ts  # HTML table renderer
+│   └── index.ts              # Renderer module exports
+├── colorFunctions/           # Built-in color manipulation functions
+│   ├── bestContrastWith.ts   # Accessibility-focused contrast selection
+│   ├── colorMix.ts           # CSS color-mix() function support
+│   ├── relativeTo.ts         # CSS relative color syntax support
+│   └── ...                   # Other color functions
+├── types.ts                  # Core type definitions
+└── index.ts                  # Main library entry point
+demo/                         # Interactive demo application
+├── demo.ts                   # Demo application logic
+├── demoInputParser.ts        # Input parsing for demo
+└── index.html                # Demo HTML page
+```
+
+### Architecture Benefits
+
+- **Modular Design**: Clear separation between routing logic, rendering, and color functions
+- **Advanced Dependency Tracking**: Enhanced `DependencyGraph` with standard graph algorithms
+- **Multiple Output Formats**: Flexible renderer system for different target formats
+- **Type Safety**: Full TypeScript support throughout the codebase
 
 ## Features
 
@@ -84,7 +120,8 @@ npm run dev  # Start development server
 
 - **Enhanced `bestContrastWith`**, **`minContrastWith`**, **`closestColor`**: These functions can search entire palettes for optimal color choices.
 - **Format-Specific Function Rendering**: Functions like `colorMix` render to native CSS `color-mix()` or SCSS `mix()` where appropriate.
-- **Modular TypeScript Architecture**: Core logic is separated into `ColorRouter` (orchestrator), `PaletteManager` (palette operations), `DependencyGraph` (dependency tracking), and `ColorRenderer` (output generation).
+- **Modular TypeScript Architecture**: Core logic is separated into `ColorRouter` (orchestrator), `PaletteManager` (palette operations), `DependencyGraph` (dependency tracking), and various `Renderer` classes (output generation).
+- **Advanced Dependency Analysis**: Enhanced `DependencyGraph` with standard graph algorithms including DFS/BFS traversal, shortest path finding, cycle detection, and connectivity analysis.
 - **Full TypeScript Support**: Complete type definitions for all APIs.
 
 ### Built-in Functions
@@ -135,11 +172,10 @@ npm run dev          # Start development server with hot reload
 ### Basic Palette Setup
 
 ```typescript
-import { ColorRouter } from './src/ColorRouter';
-import { ColorRenderer } from './src/ColorRenderer';
+import { ColorRouter } from 'color-router';
+import { ColorRenderer } from 'color-router/renderers';
 
 const router = new ColorRouter();
-router.setColorRenderer(ColorRenderer);
 
 // Create base palette
 router.createPalette('base');
@@ -188,6 +224,13 @@ router.define('accessible-text', router.func('minContrastWith', 'light.backgroun
 
 #### CSS Variables
 
+```typescript
+import { ColorRenderer } from 'color-router/renderers';
+
+const renderer = new ColorRenderer(router, 'css-variables');
+const cssOutput = renderer.render();
+```
+
 ```css
 :root {
   --base-primary: #0066cc;
@@ -198,6 +241,11 @@ router.define('accessible-text', router.func('minContrastWith', 'light.backgroun
 
 #### SCSS Variables
 
+```typescript
+const renderer = new ColorRenderer(router, 'scss');
+const scssOutput = renderer.render();
+```
+
 ```scss
 $base-primary: #0066cc;
 $light-mixed-accent: mix($base-orange, $light-primary, 70%);
@@ -205,6 +253,11 @@ $card-primary-text: $scale-0;
 ```
 
 #### JSON Export
+
+```typescript
+const renderer = new ColorRenderer(router, 'json');
+const jsonOutput = renderer.render();
+```
 
 ```json
 {
@@ -215,6 +268,60 @@ $card-primary-text: $scale-0;
 ```
 
 ## API Reference
+
+### Dependency Analysis
+
+The Color Router System includes advanced dependency analysis capabilities through the enhanced `DependencyGraph` class:
+
+#### Graph Traversal
+
+```typescript
+const depGraph = router.getDependencyGraph();
+
+// Depth-First Search traversal
+const dfsResult = depGraph.dfsTraversal('brand.primary', false); // traverse dependents
+// Returns: ['brand.primary', 'button.default', 'button.hover', 'card.border']
+
+// Breadth-First Search traversal  
+const bfsResult = depGraph.bfsTraversal('brand.primary', true); // traverse prerequisites
+// Returns: ['brand.primary', 'base.blue', 'base.saturation']
+```
+
+#### Path Finding and Connectivity
+
+```typescript
+// Find shortest path between two colors
+const path = depGraph.findShortestPath('brand.primary', 'button.text');
+// Returns: ['brand.primary', 'button.default', 'button.text'] or null if no path
+
+// Check if colors are connected
+const isConnected = depGraph.hasPath('brand.primary', 'theme.background');
+// Returns: true/false
+
+// Detect circular dependencies
+const hasCycles = depGraph.hasCycles();
+// Returns: true/false
+```
+
+#### Graph Analysis
+
+```typescript
+// Get all nodes in the dependency graph
+const allNodes = depGraph.getAllNodes();
+// Returns: ['brand.primary', 'button.default', 'theme.background', ...]
+
+// Get adjacency list representation
+const adjacencyList = depGraph.getAdjacencyList(false); // show dependents
+// Returns: { 'brand.primary': ['button.default', 'theme.accent'], ... }
+
+// Analyze node connections
+const incomingCount = depGraph.getNodeDegree('button.default', true); // prerequisites
+const outgoingCount = depGraph.getNodeDegree('button.default', false); // dependents
+
+// Graph terminology aliases
+const prerequisites = depGraph.getIncomingEdges('button.hover'); // same as getPrerequisitesFor
+const dependents = depGraph.getOutgoingEdges('brand.primary'); // same as getDependentsOf
+```
 
 ### Avoiding Complexity Explosions
 
@@ -302,11 +409,28 @@ By capturing not just _what_ colors exist, but _why_ they exist and _how_ they r
 - `setColorRenderer(ColorRendererClass)`: Injects the `ColorRenderer` class.
 - `createRenderer(format?)`: Creates an instance of the injected `ColorRenderer`.
 
-### ColorRenderer (Instantiated via `router.createRenderer()` or directly)
+### ColorRenderer
 
-- `constructor(router, format?)`
+- `constructor(router, format?)`: Create renderer instance.
 - `render()`: Generate output string (CSS, SCSS, JSON).
-- `format`: Get or set the output format.
+- `format`: Get or set the output format ('css-variables', 'scss', 'json').
+- `registerFunctionRenderer(functionName, rendererFn)`: Register custom function renderer for current format.
+
+### Import Paths
+
+```typescript
+// Core router functionality
+import { ColorRouter } from 'color-router';
+
+// Renderers
+import { ColorRenderer, SVGRenderer, TableViewRenderer } from 'color-router/renderers';
+
+// Individual color functions (if needed)
+import { bestContrastWith, colorMix } from 'color-router/functions';
+
+// Types
+import type { ColorDefinition, ColorReference, ColorFunction } from 'color-router/types';
+```
 
 ## License
 

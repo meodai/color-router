@@ -1,10 +1,8 @@
-# Color Routing System Specification
+# Color Router System Specification
 
 ## Overview
 
 A reactive TypeScript color routing system that supports nested color definitions, dynamic color calculations, and multiple output formats. Built with modern CSS color functions and designed for design systems that need to maintain color relationships across different platforms.
-
-The main class is `ColorRouter` which manages multiple palettes (namespaces) and their relationships, delegating palette state to `PaletteManager` and dependency tracking to `DependencyGraph`. Renderers like `ColorRenderer` are instantiated separately to process and output color data.
 
 ## Core Features
 
@@ -263,26 +261,79 @@ router.resolve('layout.background'); // => '#ff0000' (assuming brand.primary was
 
 ### Dependency Analysis
 
-Export connection information for advanced use cases using `DependencyGraph` methods (accessed via `router.getDependencyGraph()`).
+Export connection information for advanced use cases using enhanced `DependencyGraph` methods (accessed via `router.getDependencyGraph()`).
+
+#### Basic Dependency Information
 
 ```typescript
 const depGraph = router.getDependencyGraph();
-depGraph.getPrerequisitesFor('layout.onBackground'); // => ['layout.background', 'scale'] (or specific colors from scale)
-depGraph.getConnectionGraph(); // => full dependency tree { node: [...dependents] }
+
+// Basic dependency queries
+depGraph.getPrerequisitesFor('layout.onBackground'); // => ['layout.background', 'scale']
+depGraph.getDependentsOf('brand.primary'); // => ['button.default', 'theme.accent']
+depGraph.getConnectionGraph(); // => full dependency tree { node: [...dependents] } (deprecated)
+depGraph.getAdjacencyList(false); // => preferred method for adjacency list
+```
+
+#### Advanced Graph Analysis
+
+```typescript
+// Graph traversal algorithms
+const dfsOrder = depGraph.dfsTraversal('brand.primary', false); // DFS from brand.primary following dependents
+const bfsOrder = depGraph.bfsTraversal('brand.primary', true);  // BFS from brand.primary following prerequisites
+
+// Path finding and connectivity
+const shortestPath = depGraph.findShortestPath('brand.primary', 'button.text', false); // shortest path via dependents
+const isConnected = depGraph.hasPath('brand.primary', 'theme.background', false); // check connectivity
+
+// Cycle detection and graph properties
+const hasCycles = depGraph.hasCycles(); // detect circular dependencies
+const allNodes = depGraph.getAllNodes(); // get all nodes in the graph
+
+// Node analysis with graph terminology
+const incomingEdges = depGraph.getIncomingEdges('button.hover'); // alias for getPrerequisitesFor
+const outgoingEdges = depGraph.getOutgoingEdges('brand.primary'); // alias for getDependentsOf
+const inDegree = depGraph.getNodeDegree('button.default', true);  // count of prerequisites
+const outDegree = depGraph.getNodeDegree('button.default', false); // count of dependents
+```
+
+#### Graph Algorithm Applications
+
+```typescript
+// Find all colors that depend on a base color (transitively)
+const allDependents = depGraph.dfsTraversal('brand.primary', false);
+console.log(`Changing brand.primary will affect: ${allDependents.slice(1).join(', ')}`);
+
+// Find the dependency chain for a complex color
+const dependencyChain = depGraph.dfsTraversal('complex.calculated.color', true);
+console.log(`Dependency chain: ${dependencyChain.reverse().join(' → ')}`);
+
+// Detect strongly connected components (for circular dependency analysis)
+if (depGraph.hasCycles()) {
+  console.log('Warning: Circular dependencies detected in color system');
+}
+
+// Find shortest dependency path between two colors
+const path = depGraph.findShortestPath('base.primary', 'ui.final.color');
+if (path) {
+  console.log(`Shortest dependency path: ${path.join(' → ')}`);
+}
 ```
 
 ### Multiple Renderer Support
 
-The system supports different output formats. `ColorRenderer` is the primary example.
+The system supports different output formats through modular renderer classes.
 
 ```typescript
+import { ColorRenderer, SVGRenderer, TableViewRenderer } from 'color-router/renderers';
+
 // CSS Variables Renderer - preserves references where possible
 const cssRenderer = new ColorRenderer(router, 'css-variables');
 const cssResult = cssRenderer.render();
 // Example Output:
 // --layout-background: var(--brand-primary);
 // --brand-primary: #ff0000;
-// --layout-on-background: #ffffff; /* Example resolved value */
+// --layout-on-background: #ffffff;
 
 // JSON Renderer - all final colors resolved to hex values
 const jsonRenderer = new ColorRenderer(router, 'json');
@@ -290,7 +341,7 @@ const jsonResult = jsonRenderer.render();
 // Example Output:
 // {
 //   "layout.background": "#ff0000",
-//   "brand.primary": "#ff0000",
+//   "brand.primary": "#ff0000", 
 //   "layout.on-background": "#ffffff"
 // }
 
@@ -300,7 +351,14 @@ const scssResult = scssRenderer.render();
 // Example Output:
 // $layout-background: $brand-primary;
 // $brand-primary: #ff0000;
-// $layout-on-background: #ffffff; /* Example resolved value */
+// $layout-on-background: #ffffff;
+
+// Additional specialized renderers
+const svgRenderer = new SVGRenderer(router);
+const svgVisualization = svgRenderer.render(); // SVG dependency graph visualization
+
+const tableRenderer = new TableViewRenderer(router);
+const htmlTable = tableRenderer.render(); // HTML table of all colors
 ```
 
 ### Technology-Aware Rendering
@@ -350,129 +408,206 @@ router.set(key: string, value: ColorDefinition): void // Alias for define
 
 // router.func('bestContrastWith', targetColorKey: string, paletteNameOrFallbackArray: string | string[], fallbackColor?: string)
 
-### Custom Renderersr2Key: string, ratio?: number, colorSpace?: string)
+### Custom Renderers
 
-One could create new classes similar to `ColorRenderer` to support other output formats by consuming data from `ColorRouter`.kColor?: string)
+Create new renderer classes by implementing the basic renderer interface and consuming data from `ColorRouter`:
+
+```typescript
+import type { ColorRouter } from 'color-router';
+
+class CustomRenderer {
+  constructor(private router: ColorRouter, private format: string = 'custom') {}
+
+  render(): string {
+    const allKeys = this.router.getAllKeys();
+    const output: string[] = [];
+    
+    for (const key of allKeys) {
+      const value = this.router.resolve(key);
+      const definition = this.router.getDefinitionForKey(key);
+      
+      // Custom rendering logic based on definition type and format
+      output.push(`${key}: ${value}`);
+    }
+    
+    return output.join('\n');
+  }
+  
+  // Access dependency information for advanced rendering
+  private analyzeDependencies(key: string) {
+    const depGraph = this.router.getDependencyGraph();
+    return {
+      prerequisites: depGraph.getPrerequisitesFor(key),
+      dependents: depGraph.getDependentsOf(key),
+      depth: depGraph.dfsTraversal(key, true).length
+    };
+  }
+}
+```
 
 ## API Reference
 
-### Core Methods (`ColorRouter`)etteNameOrColorArray: string | string[])
+### Core Methods (`ColorRouter`)
 
 ```typescript
-// Definition// Batch Operations (batch mode only)
-router.define(key: string, value: ColorDefinition): voidrouter.flush(): { key: string; status: 'success' | 'error'; value?: string; error?: Error }[]
+// Definition
+router.define(key: string, value: ColorDefinition): void
 
 // Modification
-router.set(key: string, value: ColorDefinition): void // Alias for definerouter.addEventListener(event: 'change', callback: (event: CustomEvent<ColorChangeEvent[]>) => void): void
-moveEventListener(event: 'change', callback: (event: CustomEvent<ColorChangeEvent[]>) => void): void
+router.set(key: string, value: ColorDefinition): void // Alias for define
+
 // Resolution
 router.resolve(key: string): string // final computed color
-// Palette Management (delegated to PaletteManager)
-// References and Functionsrouter.createPalette(name: string, options?: { extends?: string; overrides?: Record<string, any> }): void
-router.ref(key: string): ColorReferenceing, overrides?: Record<string, any>): void // shortcut for createPalette with extends
+
+// References and Functions
+router.ref(key: string): ColorReference
 router.func(name: string, ...args: any[]): ColorFunction // Generic function creation
 router.registerFunction(name: string, fn: (...args: any[]) => string, options?: { isPaletteAware?: boolean }): void
-nfig }>
+
 // Built-in Functions (accessed via router.func())
 // router.func('bestContrastWith', targetColorKey: string, paletteNameOrFallbackArray: string | string[], fallbackColor?: string)
 // router.func('colorMix', color1Key: string, color2Key: string, ratio?: number, colorSpace?: string)
-// router.func('relativeTo', baseColorKey: string, transform: string)router.getAllKeysForPalette(paletteName: string): string[] // Gets all keys fully qualified for a palette, considering inheritance
-// router.func('minContrastWith', targetColorKey: string, minRatioOrPalette: number | string, fallbackColor?: string)y: string): ColorDefinition | undefined
+// router.func('relativeTo', baseColorKey: string, transform: string)
+// router.func('minContrastWith', targetColorKey: string, minRatioOrPalette: number | string, fallbackColor?: string)
 // router.func('lighten', colorKey: string, amount: number)
 // router.func('darken', colorKey: string, amount: number)
 // router.func('furthestFrom', paletteName: string)
-// router.func('closestColor', targetColorKey: string, paletteNameOrColorArray: string | string[])l dependencies for a key
-// Examples of using router.func():
-// router.func('bestContrastWith', 'some.color', 'paletteName')
-// router.func('bestContrastWith', 'some.color', ['#fff', '#000'])router.getDependencyGraph(): DependencyGraph // Returns the DependencyGraph instance
-// router.func('minContrastWith', 'some.color', 4.5) // 4.5 is the ratio
-// router.func('minContrastWith', 'some.color', 'paletteName')
-router.mode: 'auto' | 'batch' // getter
-ode: 'auto' | 'batch'): void
-// Batch Operations (batch mode only) (size of current batch queue)
-router.flush(): void // Emits 'batch-complete' or 'batch-failed' event): void
+// router.func('closestColor', targetColorKey: string, paletteNameOrColorArray: string | string[])
 
-// Events
-router.addEventListener(event: 'change', callback: (event: CustomEvent<ColorChangeEvent[]>) => void): void// ColorDefinition, ColorReference, ColorFunction, PaletteConfig, ColorChangeEvent, LogCallback
-router.addEventListener(event: 'batch-complete', callback: (event: CustomEvent<{ changes: ColorChangeEvent[], errors: {key: string, error: Error}[], processedKeys: string[], summary: string }>) => void): voids' | 'json' (used by ColorRenderer)
-router.addEventListener(event: 'batch-failed', callback: (event: CustomEvent<{ error: Error, stage: string, processedKeys: string[], errors: {keys: string[], error: Error}[], summary: string }>) => void): void
-router.removeEventListener(event: string, callback: EventListener): void // Generic remove
-router.watch(key: string, callback: (newValue: string, oldValue: string | undefined) => void): void `ColorRenderer` Methods
-
-
-// Palette Management (delegated to PaletteManager)// Constructor
-router.createPalette(name: string, options?: { extends?: string; overrides?: Record<string, any> }): voidenderer(router: ColorRouter, format?: RenderFormat)
+// Palette Management (delegated to PaletteManager)
+router.createPalette(name: string, options?: { extends?: string; overrides?: Record<string, any> }): void
 router.extendPalette(name: string, basePalette: string, overrides?: Record<string, any>): void // shortcut for createPalette with extends
 router.copyPalette(sourceName: string, targetName: string): void
-router.deletePalette(name: string): void // Deletes palette and its associated color definitionsrenderer.render(): string // Generate output string in the renderer's current format
+router.deletePalette(name: string): void // Deletes palette and its associated color definitions
 router.getAllPalettes(): Array<{ name: string; config: PaletteConfig }>
 router.hasPalette(name: string): boolean
-renderer.format: RenderFormat // getter/setter
-// Color Access & InformationrFunctionRenderer(functionName: string, rendererFn: (args: any[]) => string): void // For the current format
+
+// Color Access & Information
 router.getAllKeysForPalette(paletteName: string): string[] // Gets all keys fully qualified for a palette, considering inheritance
 router.getDefinitionForKey(key: string): ColorDefinition | undefined
-router.valueToString(value: ColorDefinition): string // Converts a definition to its string representation `DependencyGraph` Methods (subset, accessed via `router.getDependencyGraph()`)
+router.valueToString(value: ColorDefinition): string // Converts a definition to its string representation
 router.has(key: string): boolean // Checks if a color key is defined
 router.getDefinitionType(key: string): 'function' | 'reference' | 'value' | 'undefined'
-router.getVisualDependencies(key: string): Set<string> // Gets visual dependencies for a keygraph.getPrerequisitesFor(key: string): string[]
-ndentsOf(key: string): string[]
-// Dependency Analysis (Accessing the graph directly)g[]> // { node: [...dependents] }
-router.getDependencyGraph(): DependencyGraph // Returns the DependencyGraph instance): string[] // Gets all dependents and sorts them for evaluation
-n dependencies
+router.getVisualDependencies(key: string): Set<string> // Gets visual dependencies for a key
+
+// Dependency Analysis (Accessing the graph directly)
+router.getDependencyGraph(): DependencyGraph // Returns the DependencyGraph instance
+
 // Configuration
 router.mode: 'auto' | 'batch' // getter
 router.setMode(mode: 'auto' | 'batch'): void
-router.batchQueueSize: number // getter (size of current batch queue)## Integration with Culori.js
+router.batchQueueSize: number // getter (size of current batch queue)
 router.setLogCallback(callback?: LogCallback): void
 
-// Types (Key types are in './types.ts')const router = new ColorRouter();
-// ColorDefinition, ColorReference, ColorFunction, PaletteConfig, ColorChangeEvent, LogCallback the code block...
+// Batch Operations (batch mode only)
+router.flush(): void // Emits 'batch-complete' or 'batch-failed' event
+
+// Events
+router.addEventListener(event: 'change', callback: (event: CustomEvent<ColorChangeEvent[]>) => void): void
+router.addEventListener(event: 'batch-complete', callback: (event: CustomEvent<{ changes: ColorChangeEvent[], errors: {key: string, error: Error}[], processedKeys: string[], summary: string }>) => void): void
+router.addEventListener(event: 'batch-failed', callback: (event: CustomEvent<{ error: Error, stage: string, processedKeys: string[], errors: {keys: string[], error: Error}[], summary: string }>) => void): void
+router.removeEventListener(event: string, callback: EventListener): void // Generic remove
+router.watch(key: string, callback: (newValue: string, oldValue: string | undefined) => void): void
+
+// Types (Key types are in './types.ts')
+// ColorDefinition, ColorReference, ColorFunction, PaletteConfig, ColorChangeEvent, LogCallback
 // RenderFormat = 'css-variables' | 'scss' | 'json' (used by ColorRenderer)
 ```
 
-Use Cases
+### Enhanced `DependencyGraph` Methods
+
+The `DependencyGraph` class provides advanced graph analysis capabilities:
+
+```typescript
+// Access the dependency graph instance
+const depGraph = router.getDependencyGraph();
+
+// Basic dependency queries
+depGraph.getPrerequisitesFor(key: string): string[]
+depGraph.getDependentsOf(key: string): string[]
+depGraph.getConnectionGraph(): Record<string, string[]> // { node: [...dependents] } (deprecated)
+depGraph.getEvaluationOrderFor(startKey: string): string[] // Gets all dependents and sorts them for evaluation
+depGraph.topologicalSort(keysToSort: string[]): string[] // Sorts given keys based on dependencies
+
+// Graph traversal algorithms
+depGraph.dfsTraversal(startNode: string, visitPrerequisites?: boolean): string[]
+depGraph.bfsTraversal(startNode: string, visitPrerequisites?: boolean): string[]
+
+// Path finding and connectivity
+depGraph.findShortestPath(fromNode: string, toNode: string, traverseUpstream?: boolean): string[] | null
+depGraph.hasPath(fromNode: string, toNode: string, traverseUpstream?: boolean): boolean
+
+// Graph analysis and properties
+depGraph.hasCycles(): boolean // Detects circular dependencies
+depGraph.getAllNodes(): string[] // Gets all nodes in the graph
+depGraph.getAdjacencyList(showPrerequisites?: boolean): Record<string, string[]>
+
+// Graph terminology and node analysis
+depGraph.getIncomingEdges(node: string): string[] // Alias for getPrerequisitesFor
+depGraph.getOutgoingEdges(node: string): string[] // Alias for getDependentsOf  
+depGraph.getNodeDegree(node: string, incoming?: boolean): number // Count of connections
+```
 
 ### `ColorRenderer` Methods
 
-n System with Palette Inheritance
-
-````typescript
-// Constructoruter.func` calls are correct for `bestContrastWith`)
-// new ColorRenderer(router: ColorRouter, format?: RenderFormat)```typescript
-
-// Renderinge design system palette
-renderer.render(): string // Generate output string in the renderer's current formatem');
-', '#0066cc');
-// Configuration', '#ff6600');
-renderer.format: RenderFormat // getter/setterf');
-renderer.registerFunctionRenderer(functionName: string, rendererFn: (args: any[]) => string): void // For the current format);
-````
-
-### `DependencyGraph` Methods (subset, accessed via `router.getDependencyGraph()`)router.createPalette('light', {
-
 ```typescript
-graph.getPrerequisitesFor(key: string): string[]'design-system.neutral-100'),
-graph.getDependentsOf(key: string): string[]#f5f5f5',
-graph.getConnectionGraph(): Record<string, string[]> // { node: [...dependents] }00'),
-graph.getEvaluationOrderFor(startKey: string): string[] // Gets all dependents and sorts them for evaluation
-graph.topologicalSort(keysToSort: string[]): string[] // Sorts given keys based on dependencies
+// Constructor
+new ColorRenderer(router: ColorRouter, format?: RenderFormat)
+
+// Rendering
+renderer.render(): string // Generate output string in the renderer's current format
+
+// Configuration
+renderer.format: RenderFormat // getter/setter
+renderer.registerFunctionRenderer(functionName: string, rendererFn: (args: any[]) => string): void // For the current format
 ```
 
-Create dark theme palette
-router.createPalette('dark', {
+## Integration with Culori.js
 
-## Integration with Culori.jsit light structure
-
-```typescriptral-900'),
-const router = new ColorRouter();#2d2d2d',
-// ...rest of the code block...00'),
+```typescript
+const router = new ColorRouter();
+// ...rest of the code block...
 ```
 
 ## Use Cases
 
-All UI elements can reference either palette
+### 1. Design System with Palette Inheritance
 
-### 1. Design System with Palette Inheritancerouter.define('ui.button-bg', router.ref('light.primary')); // or 'dark.primary'
+(Example remains largely the same, ensure `router.func` calls are correct for `bestContrastWith`)
+
+```typescript
+const router = new ColorRouter();
+
+// Define base design system palette
+router.createPalette('design-system');
+router.define('design-system.primary', '#0066cc');
+router.define('design-system.secondary', '#ff6600');
+router.define('design-system.neutral-100', '#ffffff');
+router.define('design-system.neutral-900', '#1a1a1a');
+
+// Create light theme palette
+router.createPalette('light', {
+  extends: 'design-system',
+  overrides: {
+    background: router.ref('design-system.neutral-100'),
+    surface: '#f5f5f5',
+    'on-background': router.ref('design-system.neutral-900'),
+  },
+});
+
+// Create dark theme palette
+router.createPalette('dark', {
+  extends: 'light', // inherit light structure
+  overrides: {
+    background: router.ref('design-system.neutral-900'),
+    surface: '#2d2d2d',
+    'on-background': router.ref('design-system.neutral-100'),
+  },
+});
+
+// All UI elements can reference either palette
+router.define('ui.button-bg', router.ref('light.primary')); // or 'dark.primary'
+```
 
 (Example remains largely the same, ensure `router.func` calls are correct for `bestContrastWith`)
 

@@ -469,6 +469,10 @@ export class ColorRouter {
     return this.#dependencyGraph.getDependentsOf(key);
   }
 
+  getDependencyGraph(): DependencyGraph {
+    return this.#dependencyGraph;
+  }
+
   getConnectionGraph(): Record<string, string[]> {
     return this.#dependencyGraph.getConnectionGraph();
   }
