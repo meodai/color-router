@@ -6,7 +6,8 @@ import {
   minContrastWith, 
   lighten, 
   darken,
-  furthestFrom
+  furthestFrom,
+  closestColor // Add closestColor here
 } from './colorFunctions';
 
 // --- TYPE DEFINITIONS ---
@@ -45,7 +46,8 @@ export class ColorFunction {
     const resolvedArgs = this.args.map(arg => 
       typeof arg === 'string' && resolver.has(arg) ? resolver.resolve(arg) : arg
     );
-    return this.fn(...resolvedArgs);
+    // Ensure the function is called with the ColorRouter instance as its `this` context
+    return this.fn.call(resolver, ...resolvedArgs);
   }
 }
 
@@ -77,31 +79,72 @@ export class ColorRouter {
   readonly #batchQueue = new Set<string>();
   readonly #eventEmitter = new EventTarget();
   readonly #customFunctions = new Map<string, (...args: any[]) => string>();
+  readonly #paletteAwareFunctions = new Set<string>(); // New: For palette-aware functions
   
   #ColorRenderer?: ColorRendererClass;
   #logCallback?: LogCallback;
 
   constructor(options: { mode?: 'auto' | 'batch' } = {}) {
     this.#mode = options.mode || 'auto';
-    this.#registerBuiltinFunctions();
+    this.#registerBuiltinFunctions(); // Ensure this is called
+  }
+
+  #registerBuiltinFunctions(): void {
+    // Register built-in functions, marking palette-aware ones
+    this.registerFunction('bestContrastWith', bestContrastWith, { isPaletteAware: true });
+    this.registerFunction('minContrastWith', minContrastWith, { isPaletteAware: true });
+    this.registerFunction('furthestFrom', furthestFrom, { isPaletteAware: true });
+    this.registerFunction('closestColor', closestColor, { isPaletteAware: true }); // Register closestColor as palette-aware
+    
+    this.registerFunction('colorMix', colorMix);
+    this.registerFunction('relativeTo', relativeTo);
+    this.registerFunction('lighten', lighten);
+    this.registerFunction('darken', darken);
   }
 
   // --- CUSTOM FUNCTIONS ---
-  registerFunction(name: string, fn: (...args: any[]) => string): void {
+  registerFunction(name: string, fn: (...args: any[]) => string, options?: { isPaletteAware?: boolean }): void {
     if ((this as any)[name] || name === 'ref' || name === 'func') {
-      throw new PaletteError(`Function name "${name}" is reserved.`);
+      throw new PaletteError(`Function name \"${name}\" is reserved.`);
     }
     this.#customFunctions.set(name, fn);
-    if (this.#logCallback) this.#logCallback(`Registered function '${name}'.`);
+    if (options?.isPaletteAware) {
+      this.#paletteAwareFunctions.add(name);
+    }
+    if (this.#logCallback) this.#logCallback(`Registered function '${name}'${options?.isPaletteAware ? ' (palette-aware)' : ''}.`);
   }
 
   func(name: string, ...args: any[]): ColorFunction {
     if (!this.#customFunctions.has(name)) {
-      throw new PaletteError(`Custom function "${name}" is not registered.`);
+      throw new PaletteError(`Custom function \"${name}\" is not registered.`);
     }
     const implementation = this.#customFunctions.get(name)!;
-    const dependencies = args.filter(arg => typeof arg === 'string' && arg.includes('.'));
-    return new ColorFunction(implementation, args, dependencies);
+    
+    const dependencySet = new Set<string>();
+
+    // Add explicit color key dependencies (e.g., "palette.color")
+    args.forEach(arg => {
+      if (typeof arg === 'string' && arg.includes('.')) {
+        dependencySet.add(arg);
+      }
+    });
+    
+    // Enhanced dependency detection for palette-aware functions
+    if (this.#paletteAwareFunctions.has(name)) {
+      for (const arg of args) {
+        // Check if the argument is a string, does not contain a dot (i.e., not a specific color key),
+        // and matches an existing palette name.
+        if (typeof arg === 'string' && !arg.includes('.') && this.#palettes.has(arg)) {
+          const paletteKeys = this.getAllKeysForPalette(arg);
+          for (const pKey of paletteKeys) {
+            dependencySet.add(pKey);
+          }
+        }
+      }
+    }
+    
+    const finalDependencies = Array.from(dependencySet);
+    return new ColorFunction(implementation, args, finalDependencies);
   }
 
   // --- PALETTE MANAGEMENT ---
@@ -450,21 +493,9 @@ export class ColorRouter {
   ref(key: string): ColorReference { 
     return new ColorReference(key); 
   }
-  
-  // Register built-in functions during construction
-  #registerBuiltinFunctions(): void {
-    // Register all built-in functions from the colorFunctions module
-    this.registerFunction('bestContrastWith', bestContrastWith.bind(this));
-    this.registerFunction('colorMix', colorMix);
-    this.registerFunction('relativeTo', relativeTo);
-    this.registerFunction('minContrastWith', minContrastWith.bind(this));
-    this.registerFunction('lighten', lighten);
-    this.registerFunction('darken', darken);
-    this.registerFunction('furthestFrom', furthestFrom.bind(this));
-  }
 
   // --- PUBLIC GETTERS FOR UI ---
-  getAllPalettes(): Array<{ name: string; config: PaletteConfig }> {
+  getAllPalettes = (): Array<{ name: string; config: PaletteConfig }> => {
     return Array.from(this.#palettes.entries()).map(([name, config]) => ({ name, config }));
   }
 

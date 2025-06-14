@@ -390,8 +390,8 @@ function editColor(key: string): void {
 }
 
 // Register a function to find the closest color in a palette to a given color
-router.registerFunction('closestColor', (target: string, paletteName: string, minDistance: number = 0): string => {
-  const keys = router.getAllKeysForPalette(paletteName);
+router.registerFunction('closestColor', function(this: ColorRouter, target: string, paletteName: string, minDistance: number = 0): string {
+  const keys = this.getAllKeysForPalette(paletteName);
   if (!keys.length) return '#transparent';
   
   const targetColor = culori.parse(target);
@@ -403,7 +403,7 @@ router.registerFunction('closestColor', (target: string, paletteName: string, mi
   const differenceFunction = culori.differenceCiede2000(1, 1, 1);
 
   for (const key of keys) {
-    const resolvedColor = router.resolve(key);
+    const resolvedColor = this.resolve(key);
     const color = culori.parse(resolvedColor);
     
     if (!color) continue;
@@ -416,10 +416,10 @@ router.registerFunction('closestColor', (target: string, paletteName: string, mi
     }
   }
   
-  const result = closestKey ? router.resolve(closestKey) : '';
+  const result = closestKey ? this.resolve(closestKey) : '';
   
   return result;
-});
+}.bind(router));
 
 // --- Initial State & Demo Setup ---
 function setupInitialState(): void {
