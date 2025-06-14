@@ -9,7 +9,7 @@ An advanced TypeScript color management system that works like a smart, intercon
 - **Link Colors (References):** Make one color directly point to another (e.g., `header.background = brand.primary`). If `brand.primary` changes, `header.background` updates automatically. Use `router.ref('brand.primary')`.
 - **Calculate Colors (Functions):** Define colors based on calculations involving other colors (e.g., `button.hover = darken(brand.primary, 10%)` or `text.onPrimary = bestContrastWith(brand.primary)`). Use `router.func('darken', ...)`.
 - **Automatic Updates:** Changes to any source color automatically cascade to all dependent colors.
-- **Multiple Output Formats:** Export your color system as CSS variables, SCSS, JSON, etc., using **Renderers**.
+- **Multiple Output Formats:** Export your color system as CSS variables, JSON, etc., using **Renderers**.
 
 This system turns complex color management into a logical, maintainable, and less error-prone process.
 
@@ -80,7 +80,7 @@ src/
 │   ├── errors.ts             # Error classes (CircularDependencyError, etc.)
 │   └── index.ts              # Router module exports
 ├── renderers/                 # Output format renderers
-│   ├── ColorRenderer.ts      # CSS, SCSS, JSON output renderer
+│   ├── ColorRenderer.ts      # CSS, JSON output renderer
 │   ├── SVGRenderer.ts        # SVG visualization renderer
 │   ├── TableViewRenderer.ts  # HTML table renderer
 │   └── index.ts              # Renderer module exports
@@ -114,12 +114,12 @@ demo/                         # Interactive demo application
 - **Function System**: Built-in color manipulation functions (like `darken`, `bestContrastWith`) + custom function registration.
 - **Event System**: Get notified of changes via `router.addEventListener('change', ...)` or `router.watch('key', ...)`. Batch operations also emit `batch-complete` or `batch-failed` events.
 - **Batch vs Auto Mode**: Control when color updates are processed.
-- **Multiple Output Formats**: `ColorRenderer` can output to CSS variables, SCSS variables, and JSON.
+- **Multiple Output Formats**: `ColorRenderer` can output to CSS variables and JSON.
 
 ### Enhanced Features
 
 - **Enhanced `bestContrastWith`**, **`minContrastWith`**, **`closestColor`**: These functions can search entire palettes for optimal color choices.
-- **Format-Specific Function Rendering**: Functions like `colorMix` render to native CSS `color-mix()` or SCSS `mix()` where appropriate.
+- **Format-Specific Function Rendering**: Functions like `colorMix` render to native CSS `color-mix()` where appropriate.
 - **Modular TypeScript Architecture**: Core logic is separated into `ColorRouter` (orchestrator), `PaletteManager` (palette operations), `DependencyGraph` (dependency tracking), and various `Renderer` classes (output generation).
 - **Advanced Dependency Analysis**: Enhanced `DependencyGraph` with standard graph algorithms including DFS/BFS traversal, shortest path finding, cycle detection, and connectivity analysis.
 - **Full TypeScript Support**: Complete type definitions for all APIs.
@@ -237,19 +237,6 @@ const cssOutput = renderer.render();
   --light-mixed-accent: color-mix(in lab, var(--light-primary) 30%, var(--base-orange));
   --card-primary-text: var(--scale-0);
 }
-```
-
-#### SCSS Variables
-
-```typescript
-const renderer = new ColorRenderer(router, 'scss');
-const scssOutput = renderer.render();
-```
-
-```scss
-$base-primary: #0066cc;
-$light-mixed-accent: mix($base-orange, $light-primary, 70%);
-$card-primary-text: $scale-0;
 ```
 
 #### JSON Export
@@ -412,8 +399,8 @@ By capturing not just _what_ colors exist, but _why_ they exist and _how_ they r
 ### ColorRenderer
 
 - `constructor(router, format?)`: Create renderer instance.
-- `render()`: Generate output string (CSS, SCSS, JSON).
-- `format`: Get or set the output format ('css-variables', 'scss', 'json').
+- `render()`: Generate output string (CSS, JSON).
+- `format`: Get or set the output format ('css-variables', 'json').
 - `registerFunctionRenderer(functionName, rendererFn)`: Register custom function renderer for current format.
 
 ### Import Paths

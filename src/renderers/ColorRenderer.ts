@@ -13,7 +13,7 @@ import {
 /**
  * Defines the possible output formats for rendering colors.
  */
-export type RenderFormat = 'css-variables' | 'scss' | 'json';
+export type RenderFormat = 'css-variables' | 'json';
 
 /**
  * Defines the signature for a function that renders a color function's output for a specific format.
@@ -23,7 +23,7 @@ export type RenderFormat = 'css-variables' | 'scss' | 'json';
 export type FunctionRenderer = (args: any[]) => string;
 
 /**
- * Handles the rendering of color definitions into various output formats like CSS variables, SCSS, or JSON.
+ * Handles the rendering of color definitions into various output formats like CSS variables or JSON.
  * It supports custom function renderers for different formats.
  */
 export class ColorRenderer {
@@ -98,9 +98,7 @@ export class ColorRenderer {
    * @returns The string representation of the color reference.
    */
   #renderReference(refKey: string): string {
-    if (this.#format === 'scss') {
-      return `$${refKey.replace(/\./g, '-')}`;
-    } else if (this.#format === 'css-variables') {
+    if (this.#format === 'css-variables') {
       return `var(--${refKey.replace(/\./g, '-')})`;
     } else {
       return this.#router.resolve(refKey);
@@ -152,7 +150,7 @@ export class ColorRenderer {
   /**
    * Renders all defined colors in the current format.
    * For 'json', it resolves all colors to their final string values.
-   * For 'css-variables' and 'scss', it attempts to render references and functions directly.
+   * For 'css-variables', it attempts to render references and functions directly.
    * @returns A string containing all rendered color definitions in the selected format.
    */
   render(): string {
@@ -177,8 +175,6 @@ export class ColorRenderer {
 
       if (this.#format === 'css-variables') {
         output += `  --${key.replace(/\./g, '-')}: ${value};\n`;
-      } else if (this.#format === 'scss') {
-        output += `$${key.replace(/\./g, '-')}: ${value};\n`;
       }
     }
 

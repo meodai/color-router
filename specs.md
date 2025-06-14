@@ -345,14 +345,6 @@ const jsonResult = jsonRenderer.render();
 //   "layout.on-background": "#ffffff"
 // }
 
-// SCSS Variables Renderer
-const scssRenderer = new ColorRenderer(router, 'scss');
-const scssResult = scssRenderer.render();
-// Example Output:
-// $layout-background: $brand-primary;
-// $brand-primary: #ff0000;
-// $layout-on-background: #ffffff;
-
 // Additional specialized renderers
 const svgRenderer = new SVGRenderer(router);
 const svgVisualization = svgRenderer.render(); // SVG dependency graph visualization
@@ -370,9 +362,6 @@ Renderers provide format-specific function implementations where possible. `Colo
 
 // CSS Variables Renderer output:
 // --accent: color-mix(in lab, var(--brand-primary) 60%, #f00 40%);
-
-// SCSS Renderer output:
-// $accent: mix($brand-primary, #f00, 60%); // Sass mix doesn't support color space
 
 // JSON Renderer output:
 // "accent": "#computedValue" // pre-computed using Culori with specified color space
@@ -393,20 +382,15 @@ This is handled by the `ColorRenderer`'s internal logic for each format.
 router.define('accent',
   router.func('colorMix', 'brand.primary', '#f00', 0.6, 'oklch')
 )
-// Modification
-router.set(key: string, value: ColorDefinition): void // Alias for define
 
 // CSS Modern renderer output (via ColorRenderer with 'css-variables' format):
-// --accent: color-mix(in oklch, var(--brand-primary) 40%, #f00);router.resolve(key: string): string // final computed color
+// --accent: color-mix(in oklch, var(--brand-primary) 40%, #f00);
 
-// SCSS renderer output (via ColorRenderer with 'scss' format):
-// $accent: mix($brand-primary, #f00, 60%);router.ref(key: string): ColorReference
-..args: any[]): ColorFunction // Generic function creation
-// JSON/JavaScript renderer output (via ColorRenderer with 'json' format):n: (...args: any[]) => string, options?: { isPaletteAware?: boolean }): void
+// JSON/JavaScript renderer output (via ColorRenderer with 'json' format):
 // "accent": "#cc3366" // pre-computed
 ```
 
-// router.func('bestContrastWith', targetColorKey: string, paletteNameOrFallbackArray: string | string[], fallbackColor?: string)
+// renderer.func('bestContrastWith', targetColorKey: string, paletteNameOrFallbackArray: string | string[], fallbackColor?: string)
 
 ### Custom Renderers
 
@@ -511,7 +495,7 @@ router.watch(key: string, callback: (newValue: string, oldValue: string | undefi
 
 // Types (Key types are in './types.ts')
 // ColorDefinition, ColorReference, ColorFunction, PaletteConfig, ColorChangeEvent, LogCallback
-// RenderFormat = 'css-variables' | 'scss' | 'json' (used by ColorRenderer)
+// RenderFormat = 'css-variables' | 'json' (used by ColorRenderer)
 ```
 
 ### Enhanced `DependencyGraph` Methods
@@ -693,48 +677,46 @@ const output = cssRenderer.render();
   --button-primary: var(--brand-primary); palettes and colors ...
   --button-primary-hover: color-mix(in srgb, var(--button-primary) 80%, transparent); /* Example, actual relativeTo rendering might differ */
   --button-text-on-primary: var(--brand-neutral-100);(router, 'css-variables');
-}const cssOutput = cssRenderer.render();
+}
 */
-```router, 'json');
-const jsonOutput = jsonRenderer.render(); // All values fully resolved
+```
+
 ### 5. Modern CSS Support with Palette Structure
 
-Use new CSS color functions with palette references instead of literals.const scssOutput = scssRenderer.render();
+Use new CSS color functions with palette references instead of literals.
 
 ```typescript
-router.createPalette('brand');*CSS**: Custom properties with optimal variable usage
-router.define('brand.primary', '#0066cc');- **SCSS**: Sass variables with dependency mapping
-router.define('brand.accent-subtle', router.func('colorMix', 'brand.primary', 'transparent', 0.2, 'lab')); // 20% mix with transparentsolved values)
-router.define('brand.accent-highlight', router.func('relativeTo', 'brand.primary', 'calc(l + 0.2) c h'));eming
+router.createPalette('brand');
+router.define('brand.primary', '#0066cc');
+router.define('brand.accent-subtle', router.func('colorMix', 'brand.primary', 'transparent', 0.2, 'lab')); // 20% mix with transparent
+router.define('brand.accent-highlight', router.func('relativeTo', 'brand.primary', 'calc(l + 0.2) c h'));
 
 // Create variations palette
 router.createPalette('brand-variations', {
   extends: 'brand',
-  overrides: {TypeScript support with proper type inference.
-    hover: router.func('relativeTo', 'brand.primary', 'r g b / 0.8'), // 80% opacity- **Performance**: Efficient dependency tracking with `DependencyGraph` for minimal recalculation.
-    pressed: router.func('relativeTo', 'brand.primary', 'calc(l - 0.1) c h'), // 10% darkerth via renderers.
+  overrides: {
+    hover: router.func('relativeTo', 'brand.primary', 'r g b / 0.8'), // 80% opacity
+    pressed: router.func('relativeTo', 'brand.primary', 'calc(l - 0.1) c h'), // 10% darker
   },
 });
-```Culori.js.
-on.
-### 6. Multi-Platform Exportderers).
+```
+
+### 6. Multi-Platform Export
 
 Same palette structure, different output formats for various platforms using `ColorRenderer` with different formats.
 
-```typescript: Topological sorting by `DependencyGraph` for optimal update order.
-const router = new ColorRouter();- **Memory Management**: Standard TypeScript/JavaScript garbage collection. Event listeners should be managed by the application if `ColorRouter` instances are frequently created/destroyed.
-// ... define palettes and colors ...ring would be an application concern.
+```typescript
+const router = new ColorRouter();
+// ... define palettes and colors ...
 
 const cssRenderer = new ColorRenderer(router, 'css-variables');
-const cssOutput = cssRenderer.render();const jsonRenderer = new ColorRenderer(router, 'json');
-const jsonOutput = jsonRenderer.render(); // All values fully resolved
+const cssOutput = cssRenderer.render();
 
-const scssRenderer = new ColorRenderer(router, 'scss');
-const scssOutput = scssRenderer.render();
+const jsonRenderer = new ColorRenderer(router, 'json');
+const jsonOutput = jsonRenderer.render(); // All values fully resolved
 ````
 
 - **CSS**: Custom properties with optimal variable usage
-- **SCSS**: Sass variables with dependency mapping
 - **JSON**: For design tools and documentation (fully resolved values)
 - **JavaScript**: (via JSON output) For runtime theming
 - **Swift/Kotlin**: (via JSON output) For mobile app integration

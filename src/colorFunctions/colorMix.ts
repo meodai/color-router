@@ -33,7 +33,7 @@ export function colorMix(
 
 /**
  * An object containing renderer functions for the `colorMix` color function.
- * These renderers provide format-specific string representations for CSS variables and SCSS.
+ * These renderers provide format-specific string representations for CSS variables.
  * The JSON renderer returns an empty string, indicating `colorMix` should be resolved to its final value for JSON output.
  */
 export const colorMixRenderers: Record<string, FunctionRenderer> = {
@@ -42,12 +42,6 @@ export const colorMixRenderers: Record<string, FunctionRenderer> = {
     const ratioNum = typeof ratio === 'string' && ratio.includes('%') ? parseFloat(ratio) : parseFloat(ratio) * 100;
     const color1Percentage = 100 - ratioNum;
     return `color-mix(in ${colorSpace}, ${color1} ${color1Percentage}%, ${color2})`;
-  },
-
-  scss: (args: any[]): string => {
-    const [color1, color2, ratio = 0.5] = args;
-    const weight = typeof ratio === 'string' && ratio.includes('%') ? parseFloat(ratio) : parseFloat(ratio) * 100;
-    return `mix(${color2}, ${color1}, ${weight}%)`;
   },
 
   json: (_args: any[]): string => {

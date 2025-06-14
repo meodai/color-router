@@ -517,7 +517,7 @@ export class ColorRouter {
     return resolved;
   }
 
-  createRenderer(format?: 'css-variables' | 'scss' | 'json'): any {
+  createRenderer(format?: 'css-variables' | 'json'): any {
     if (!this.#ColorRenderer) {
       throw new Error('ColorRenderer class not injected. Please call setColorRenderer() first.');
     }

@@ -106,14 +106,10 @@ export function furthestFrom(this: ColorRouter, paletteName: string): string {
 /**
  * An object containing placeholder renderer functions for the `furthestFrom` color function.
  * These renderers currently return empty strings, indicating that `furthestFrom` should be resolved to its final value
- * rather than being represented as a function call in CSS or SCSS.
+ * rather than being represented as a function call in CSS.
  */
 export const furthestFromRenderers: Record<string, FunctionRenderer> = {
   'css-variables': (_args: any[]): string => {
-    return '';
-  },
-
-  scss: (_args: any[]): string => {
     return '';
   },
 

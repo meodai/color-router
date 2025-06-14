@@ -139,10 +139,6 @@ export const relativeToRenderers: Record<string, FunctionRenderer> = {
     return `color(from ${baseColor} ${colorSpace} ${channels.join(' ')}${alphaStr})`;
   },
 
-  scss: (_args: any[]): string => {
-    return '';
-  },
-
   json: (_args: any[]): string => {
     return '';
   },

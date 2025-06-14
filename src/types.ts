@@ -45,4 +45,4 @@ export class ColorFunction {
 
 export type ColorDefinition = ColorValue | ColorReference | ColorFunction;
 export type LogCallback = (message: string) => void;
-export type ColorRendererClass = new (router: ColorRouter, format?: 'css-variables' | 'scss' | 'json') => any;
+export type ColorRendererClass = new (router: ColorRouter, format?: 'css-variables' | 'json') => any;

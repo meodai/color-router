@@ -25,12 +25,6 @@ export const lightenRenderers: Record<string, FunctionRenderer> = {
     return `color-mix(in oklch, ${color} ${100 - percentage}%, white)`;
   },
 
-  scss: (args: any[]): string => {
-    const [color, amount] = args;
-    const percentage = Math.round(parseFloat(amount) * 100);
-    return `lighten(${color}, ${percentage}%)`;
-  },
-
   json: (_args: any[]): string => {
     return '';
   },

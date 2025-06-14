@@ -27,7 +27,7 @@ function registerAllFunctionRenderers() {
     { name: 'furthestFrom', renderers: furthestFromRenderers },
   ];
 
-  const formats: ('css-variables' | 'scss' | 'json')[] = ['css-variables', 'scss', 'json'];
+  const formats: ('css-variables' | 'json')[] = ['css-variables', 'json'];
 
   formats.forEach((format) => {
     const renderer = router.createRenderer(format);
@@ -133,7 +133,7 @@ function renderOutput(): void {
         `;
       }
 
-      const renderer = router.createRenderer(format as 'css-variables' | 'scss' | 'json');
+      const renderer = router.createRenderer(format as 'css-variables' | 'json');
       const newCodeEl = document.getElementById('output-code')!;
       newCodeEl.textContent = renderer.render();
       newCodeEl.className = `language-${format} text-sm text-gray-200 font-mono`;
@@ -472,7 +472,7 @@ function demonstrateDependencyGraph(): void {
 function logRendererComparison(): void {
   logEvent('🔧 RENDERER COMPARISON:');
 
-  const formats: ('css-variables' | 'scss' | 'json')[] = ['css-variables', 'scss', 'json'];
+  const formats: ('css-variables' | 'json')[] = ['css-variables', 'json'];
 
   formats.forEach((format) => {
     const renderer = router.createRenderer(format);

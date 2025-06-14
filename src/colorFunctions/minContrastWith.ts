@@ -116,14 +116,10 @@ export function minContrastWith(this: ColorRouter, targetColor: string, paletteN
 /**
  * An object containing placeholder renderer functions for the `minContrastWith` color function.
  * These renderers currently return empty strings, indicating that `minContrastWith` should be resolved to its final value
- * rather than being represented as a function call in CSS or SCSS.
+ * rather than being represented as a function call in CSS.
  */
 export const minContrastWithRenderers: Record<string, FunctionRenderer> = {
   'css-variables': (_args: any[]): string => {
-    return '';
-  },
-
-  scss: (_args: any[]): string => {
     return '';
   },
 

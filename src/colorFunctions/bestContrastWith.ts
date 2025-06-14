@@ -67,14 +67,10 @@ export function bestContrastWith(this: ColorRouter, targetColorStr: string, pale
 /**
  * An object containing placeholder renderer functions for the `bestContrastWith` color function.
  * These renderers currently return empty strings, indicating that `bestContrastWith` should be resolved to its final value
- * rather than being represented as a function call in CSS or SCSS.
+ * rather than being represented as a function call in CSS.
  */
 export const bestContrastWithRenderers: Record<string, FunctionRenderer> = {
   'css-variables': (_args: any[]): string => {
-    return '';
-  },
-
-  scss: (_args: any[]): string => {
     return '';
   },
 
