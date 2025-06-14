@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => {
   } else if (mode === 'demo') {
     // Demo build configuration
     return {
-      base: '/visual-route/',
+      base: '/color-router/',
       root: './demo',
       build: {
         outDir: '../demo-dist',
