@@ -429,8 +429,8 @@ function setupInitialState(): void {
   router.createPalette('base');
   router.define('base.light', '#ffffff');
   router.define('base.dark', '#202126');
-  router.define('base.accent', '#0066cc');
-  router.define('base.attention', '#ff6600');
+  router.define('base.accent', '#1a0dab');
+  router.define('base.attention', '#FF6347');
 
   // --- RAMP (was scale) palette (0-900) - systematic neutral ramp based on base.dark
   // Create this before demo palette since demo.contrast references it
