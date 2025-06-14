@@ -28,7 +28,8 @@ export function parseDemoInput(inputValue: string, router: ColorRouter): ColorDe
   );
 
   // relativeTo('baseColor', 'colorSpace', [{modifications}] or {modifications})
-  const relativeToMatch = value.match(/relativeTo\(\s*(['"])(.*?)\2\s*,\s*(['"])(.*?)\4\s*,\s*(\[.*?\]|\{.*?\})\s*\)/);
+  const relativeToMatch = value.match(/relativeTo\(\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*(\[.*?\]|\{.*?\})\s*\)/) ||
+                           value.match(/relativeTo\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*(\[.*?\]|\{.*?\})\s*\)/);
 
   // minContrastWith('baseColor', ratio?)
   const minContrastMatch = value.match(/minContrastWith\((['"])(.*?)\2(?:,\s*([\d.]+))?\)/);
@@ -60,14 +61,18 @@ export function parseDemoInput(inputValue: string, router: ColorRouter): ColorDe
     }
     return router.func('colorMix', color1, color2, parseFloat(ratio), colorSpace);
   } else if (relativeToMatch) {
-    const baseColor = relativeToMatch[2];
-    const colorSpace = relativeToMatch[4];
-    const modificationsString = relativeToMatch[5];
+    const baseColor = relativeToMatch[1];  // First captured group is the base color
+    const colorSpace = relativeToMatch[2]; // Second captured group is the color space
+    const modificationsString = relativeToMatch[3]; // Third captured group is the modifications array/object
     try {
-      const parsedModifications = JSON.parse(modificationsString.replace(/'/g, '"'));
+      let fixedModifications = modificationsString.replace(/'/g, '"');
+      // Fix common JSON issues: .number -> 0.number
+      fixedModifications = fixedModifications.replace(/([^0-9]|^)\.(\d)/g, '$10.$2');
+      
+      const parsedModifications = JSON.parse(fixedModifications);
       return router.func('relativeTo', baseColor, colorSpace, parsedModifications);
     } catch (e) {
-      throw new Error(`Invalid modifications format for relativeTo: ${modificationsString}. ${(e as Error).message}`);
+      throw new Error(`Invalid modifications format for relativeTo: ${modificationsString}. Must be valid JSON array like ["+0.35", "0.2", "+120"] or object like {"l": "+0.35", "c": "0.2", "h": "+120"}. ${(e as Error).message}`);
     }
   } else if (minContrastMatch) {
     const baseColor = minContrastMatch[2];

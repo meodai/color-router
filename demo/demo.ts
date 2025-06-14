@@ -369,7 +369,7 @@ function setupInitialState(): void {
   router.define('base.light', '#ffffff');
   router.define('base.dark', '#202126');
   router.define('base.accent', '#1a0dab');
-  router.define('base.attention', router.func('relativeTo', 'base.accent', 'oklch', ['+.35', '.2', '+120']));
+  router.define('base.attention', router.func('relativeTo', 'base.accent', 'oklch', ['+0.35', '0.2', '+120']));
 
   router.createPalette('ramp');
   router.define('ramp.0', router.ref('base.light'));
