@@ -233,13 +233,23 @@ export class SVGRenderer extends ColorRenderer {
     const { dotRadius = 5 } = this.#options;
 
     const dots = Object.values(connectionPoints).map((point) => {
-      const radius = dotRadius; // All dots are the same radius
-      const fillColor = point.isPaletteNode ? '#FFFFFF' : point.color; // Palette header dots are white, others use their color
-      const strokeColor = point.isPaletteNode ? '#555' : 'black'; // Can differentiate stroke if needed
-      
-      return `<circle cx="${point.x}" cy="${point.y}" r="${radius}" 
-        fill="${fillColor}" stroke="${strokeColor}" stroke-width="1" 
-        data-color="${point.color}" data-key="${point.key}" />`;
+      if (point.isPaletteNode) {
+        // For palette nodes, draw a square (rect)
+        const sideLength = dotRadius * 1.6; // Make square slightly larger than circle diameter for similar visual weight
+        const xCoord = point.x - sideLength / 2;
+        const yCoord = point.y - sideLength / 2;
+        return `<rect x="${xCoord}" y="${yCoord}" width="${sideLength}" height="${sideLength}" 
+          fill="#000000" stroke="#333333" stroke-width="1" 
+          data-key="${point.key}" />`;
+      } else {
+        // For individual color nodes, draw a circle
+        const radius = dotRadius;
+        const fillColor = point.color;
+        const strokeColor = 'black';
+        return `<circle cx="${point.x}" cy="${point.y}" r="${radius}" 
+          fill="${fillColor}" stroke="${strokeColor}" stroke-width="1" 
+          data-color="${point.color}" data-key="${point.key}" />`;
+      }
     }).join('');
 
     return `<g class="dots">${dots}</g>`;
@@ -322,6 +332,10 @@ export class SVGRenderer extends ColorRenderer {
         .dots circle:hover {
           stroke-width: 2;
           r: ${(this.#options.dotRadius || 5) + 1};
+        }
+        .dots rect:hover {
+          stroke-width: 2;
+          /* Optional: slightly increase size or change stroke color on hover for squares */
         }
         /* Style for palette node text */
         .dots text {
