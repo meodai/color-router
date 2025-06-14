@@ -210,13 +210,13 @@ function renderSVGVisualization(): void {
     
     const svgRenderer = new SVGRenderer(router, {
       showConnections,
-      gap: 25,  
+      gap: 25,
       padding: 0.15,
-      fontSize: 12,
-      strokeWidth: 2,
-      dotRadius: 5,
+      fontSize: 10,
+      strokeWidth: 1.5,
+      dotRadius: 3,
       lineHeight: 1.4,
-      widthPerLetter: 8
+      widthPerLetter: 6
     });
     
     const svgContent = svgRenderer.render();
