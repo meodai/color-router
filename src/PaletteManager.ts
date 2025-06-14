@@ -1,8 +1,4 @@
-import {
-  PaletteConfig,
-  ColorDefinition,
-  LogCallback,
-} from './types';
+import { PaletteConfig, ColorDefinition, LogCallback } from './types';
 import { PaletteError, CircularDependencyError } from './errors';
 import { ColorRouter } from './ColorRouter'; // Full ColorRouter for internal methods
 
@@ -19,7 +15,7 @@ export class PaletteManager {
   constructor(
     definitions: Map<string, ColorDefinition>,
     colorRouter: ColorRouter, // Pass the ColorRouter instance
-    logCallback?: LogCallback
+    logCallback?: LogCallback,
   ) {
     this.definitions = definitions;
     this.colorRouter = colorRouter;
@@ -65,7 +61,7 @@ export class PaletteManager {
     this.createPalette(targetName); // Creates an empty palette config
 
     for (const key of sourceKeys) {
-      const definition = this.colorRouter.getDefinitionForKey(key); 
+      const definition = this.colorRouter.getDefinitionForKey(key);
       // key from getAllKeysForPalette is already like `sourceName.actualKey`
       // We need to define it as `targetName.actualKey`
       this.colorRouter.define(`${targetName}.${key.substring(sourceName.length + 1)}`, definition);
@@ -73,15 +69,16 @@ export class PaletteManager {
     if (this.logCallback) this.logCallback(`Copied palette '${sourceName}' to '${targetName}'.`);
   }
 
-  public deletePalette(name: string): string[] { // Returns keys that were part of the palette
+  public deletePalette(name: string): string[] {
+    // Returns keys that were part of the palette
     if (!this.palettes.has(name)) throw new PaletteError(`Palette "${name}" does not exist.`);
-    
+
     const keysToDelete = this.getAllKeysForPalette(name); // Changed: Use own method
     this.palettes.delete(name);
     if (this.logCallback) this.logCallback(`Deleted palette '${name}'.`);
     return keysToDelete;
   }
-  
+
   public getPalette(name: string): PaletteConfig | undefined {
     return this.palettes.get(name);
   }
@@ -95,7 +92,7 @@ export class PaletteManager {
   }
 
   /**
-   * Retrieves all fully qualified color keys belonging to a specific palette, 
+   * Retrieves all fully qualified color keys belonging to a specific palette,
    * considering its inheritance hierarchy.
    * This method relies on ColorRouter's definitions map for checking actual color definitions.
    */

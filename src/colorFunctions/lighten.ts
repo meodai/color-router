@@ -11,7 +11,7 @@ export function lighten(color: string, amount: number): string {
   try {
     const c = parse(color);
     if (!c) return color;
-    
+
     const toHsl = converter('hsl');
     const hslColor = toHsl(c);
     if (hslColor && typeof hslColor.l === 'number') {
@@ -33,15 +33,15 @@ export const lightenRenderers: Record<string, FunctionRenderer> = {
     const percentage = Math.round(parseFloat(amount) * 100);
     return `color-mix(in oklch, ${color} ${100 - percentage}%, white)`;
   },
-  
-  'scss': (args: any[]): string => {
+
+  scss: (args: any[]): string => {
     const [color, amount] = args;
     const percentage = Math.round(parseFloat(amount) * 100);
     return `lighten(${color}, ${percentage}%)`;
   },
-  
-  'json': (_args: any[]): string => {
+
+  json: (_args: any[]): string => {
     // For JSON, always use computed values
     return '';
-  }
+  },
 };

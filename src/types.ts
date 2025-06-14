@@ -19,23 +19,23 @@ export interface ColorChangeEvent {
 
 export class ColorReference {
   readonly type = Symbol.for('ColorReference');
-  
+
   constructor(public readonly key: string) {}
 }
 
 export class ColorFunction {
   readonly type = Symbol.for('ColorFunction');
-  
+
   constructor(
     public readonly fn: (...args: any[]) => string,
     public readonly args: any[],
     public readonly dependencies: string[], // For resolution logic
-    public readonly visualDependencies: string[] // For visualization. Guaranteed to be populated by func.
+    public readonly visualDependencies: string[], // For visualization. Guaranteed to be populated by func.
   ) {}
-  
+
   execute(resolver: ColorRouter): string {
-    const resolvedArgs = this.args.map(arg => 
-      typeof arg === 'string' && resolver.has(arg) ? resolver.resolve(arg) : arg
+    const resolvedArgs = this.args.map((arg) =>
+      typeof arg === 'string' && resolver.has(arg) ? resolver.resolve(arg) : arg,
     );
     // Ensure the function is called with the ColorRouter instance as its `this` context
     return this.fn.call(resolver, ...resolvedArgs);

@@ -40,12 +40,12 @@ export function closestColor(
     console.error(`[closestColor] Error getting keys for palette '${paletteName}':`, error);
     return '#00000000';
   }
-  
+
   if (!paletteKeys || paletteKeys.length === 0) {
     // This isn't necessarily an error, the palette might be legitimately empty.
     // Depending on desired behavior, could return targetColorValue or a specific default.
     // console.warn(`[closestColor] No keys found for palette: ${paletteName}`);
-    return '#00000000'; 
+    return '#00000000';
   }
 
   let closestColorHex = '';
@@ -56,10 +56,9 @@ export function closestColor(
   // const differenceFn = differenceDeltaE2000; // If using culori/fn for deltaE2000
   const differenceFn = differenceEuclidean('rgb'); // Or 'lab' for better perceptual results: differenceEuclidean('lab')
 
-
   for (const key of paletteKeys) {
     const paletteColorValue = this.resolve(key); // Already returns a normalized hex or 'invalid'
-    
+
     if (!paletteColorValue || paletteColorValue === 'invalid') {
       // console.warn(`[closestColor] Skipping invalid color for key ${key} in palette ${paletteName}`);
       continue;
@@ -98,14 +97,14 @@ export const closestColorRenderers: Record<string, FunctionRenderer> = {
     // CSS doesn't have native closest-color function, use computed value
     return '';
   },
-  
-  'scss': (_args: any[]): string => {
+
+  scss: (_args: any[]): string => {
     // SCSS doesn't have native closest-color function, use computed value
     return '';
   },
-  
-  'json': (_args: any[]): string => {
+
+  json: (_args: any[]): string => {
     // For JSON, always use computed values
     return '';
-  }
+  },
 };

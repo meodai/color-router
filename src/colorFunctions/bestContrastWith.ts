@@ -14,27 +14,27 @@ export function bestContrastWith(this: ColorRouter, targetColorStr: string, pale
     // Maintain original behavior for invalid targetColor: return black
     return '#000000';
   }
-  
+
   // If no palette specified, use simple black/white contrast
   if (!paletteName) {
     return wcagContrast('#fff', targetColorStr) >= wcagContrast('#000', targetColorStr) ? '#ffffff' : '#000000';
   }
-  
+
   // Get all colors from the specified palette
-  if (!this.getAllPalettes().find(p => p.name === paletteName)) {
+  if (!this.getAllPalettes().find((p) => p.name === paletteName)) {
     console.warn(`Palette "${paletteName}" not found, falling back to black/white contrast.`);
     return wcagContrast('#fff', targetColorStr) >= wcagContrast('#000', targetColorStr) ? '#ffffff' : '#000000';
   }
-  
+
   const paletteKeys = this.getAllKeysForPalette(paletteName);
   if (paletteKeys.length === 0) {
     console.warn(`Palette "${paletteName}" has no colors, falling back to black/white contrast.`);
     return wcagContrast('#fff', targetColorStr) >= wcagContrast('#000', targetColorStr) ? '#ffffff' : '#000000';
   }
-  
+
   let bestColor: string | null = null;
   let bestContrast = -1; // Initialize to -1 to ensure any valid contrast (>=1) is chosen
-  
+
   for (const key of paletteKeys) {
     try {
       const candidateColor = this.resolve(key);
@@ -52,14 +52,16 @@ export function bestContrastWith(this: ColorRouter, targetColorStr: string, pale
       continue;
     }
   }
-  
+
   // Return the best color found from the palette
   if (bestColor !== null) {
     return bestColor;
   }
-  
+
   // If no suitable color was found in the palette, fall back to black/white contrast.
-  console.warn(`No suitable contrasting color found in palette "${paletteName}" for target "${targetColorStr}". Falling back to black/white contrast.`);
+  console.warn(
+    `No suitable contrasting color found in palette "${paletteName}" for target "${targetColorStr}". Falling back to black/white contrast.`,
+  );
   return wcagContrast('#fff', targetColorStr) >= wcagContrast('#000', targetColorStr) ? '#ffffff' : '#000000';
 }
 
@@ -71,14 +73,14 @@ export const bestContrastWithRenderers: Record<string, FunctionRenderer> = {
     // For CSS, we fall back to computed values since there's no native best-contrast function
     return ''; // This will trigger fallback to computed value
   },
-  
-  'scss': (_args: any[]): string => {
+
+  scss: (_args: any[]): string => {
     // For SCSS, we fall back to computed values since there's no native best-contrast function
     return ''; // This will trigger fallback to computed value
   },
-  
-  'json': (_args: any[]): string => {
+
+  json: (_args: any[]): string => {
     // For JSON, always use computed values
     return ''; // This will trigger fallback to computed value
-  }
+  },
 };

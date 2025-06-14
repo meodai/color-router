@@ -1,13 +1,13 @@
 import { ColorRouter } from './ColorRouter';
 import { ColorReference, ColorFunction, ColorDefinition } from './types'; // Import from types.ts
-import { 
+import {
   bestContrastWithRenderers,
   colorMixRenderers,
   relativeToRenderers,
   minContrastWithRenderers,
   lightenRenderers,
   darkenRenderers,
-  furthestFromRenderers
+  furthestFromRenderers,
 } from './colorFunctions';
 
 export type RenderFormat = 'css-variables' | 'scss' | 'json';
@@ -21,7 +21,7 @@ export class ColorRenderer {
 
   constructor(router: ColorRouter, format: RenderFormat = 'css-variables') {
     this.#router = router;
-    this.#format = format === 'css' as any ? 'css-variables' : format; // backwards compatibility
+    this.#format = format === ('css' as any) ? 'css-variables' : format; // backwards compatibility
     this.#registerBuiltinRenderers();
   }
 
@@ -43,7 +43,7 @@ export class ColorRenderer {
       { name: 'minContrastWith', renderers: minContrastWithRenderers },
       { name: 'lighten', renderers: lightenRenderers },
       { name: 'darken', renderers: darkenRenderers },
-      { name: 'furthestFrom', renderers: furthestFromRenderers }
+      { name: 'furthestFrom', renderers: furthestFromRenderers },
     ];
 
     for (const { name, renderers } of rendererSets) {
@@ -87,8 +87,8 @@ export class ColorRenderer {
     }
 
     // Find the function name
-    const functionName = [...this.#router.getCustomFunctions().entries()]
-      .find(([_, fn]) => fn === colorFunction.fn)?.[0] || 'unknown';
+    const functionName =
+      [...this.#router.getCustomFunctions().entries()].find(([_, fn]) => fn === colorFunction.fn)?.[0] || 'unknown';
 
     const renderer = formatRenderers.get(functionName);
     if (!renderer) {
@@ -98,7 +98,7 @@ export class ColorRenderer {
 
     try {
       // Render function arguments (resolve references, keep raw values)
-      const renderedArgs = colorFunction.args.map(arg => {
+      const renderedArgs = colorFunction.args.map((arg) => {
         if (typeof arg === 'string' && arg.includes('.') && this.#router.has(arg)) {
           return this.#renderReference(arg);
         }
@@ -106,12 +106,12 @@ export class ColorRenderer {
       });
 
       const result = renderer(renderedArgs);
-      
+
       // If renderer returns empty string, fall back to computed value
       if (result === '') {
         return this.#router.resolve(key);
       }
-      
+
       return result;
     } catch (e) {
       // If rendering fails, fall back to resolved value
@@ -124,7 +124,7 @@ export class ColorRenderer {
   render(): string {
     const allKeys = new Set<string>();
     this.#router.getAllPalettes().forEach(({ name }) => {
-      this.#router.getAllKeysForPalette(name).forEach(k => allKeys.add(k));
+      this.#router.getAllKeysForPalette(name).forEach((k) => allKeys.add(k));
     });
     const keys = Array.from(allKeys).sort();
 
@@ -140,7 +140,7 @@ export class ColorRenderer {
     for (const key of keys) {
       const definition = this.#router.getDefinitionForKey(key);
       const value = this.#renderValue(definition, key);
-      
+
       if (this.#format === 'css-variables') {
         output += `  --${key.replace(/\./g, '-')}: ${value};\n`;
       } else if (this.#format === 'scss') {
@@ -158,7 +158,7 @@ export class ColorRenderer {
 
   // Set a new format
   set format(value: RenderFormat) {
-    this.#format = value === 'css' as any ? 'css-variables' : value;
+    this.#format = value === ('css' as any) ? 'css-variables' : value;
     this.#registerBuiltinRenderers();
   }
 }

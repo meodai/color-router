@@ -16,13 +16,13 @@ Define colors in organized palettes (namespaces) with support for references and
 
 ```typescript
 // First create palettes
-router.createPalette('brand')
-router.createPalette('layout')
+router.createPalette('brand');
+router.createPalette('layout');
 
 // Then define colors within them
-router.define('brand.primary', '#ff0000')
-router.define('brand.secondary', '#ffffff')
-router.define('layout.background', router.ref('brand.primary'))
+router.define('brand.primary', '#ff0000');
+router.define('brand.secondary', '#ffffff');
+router.define('layout.background', router.ref('brand.primary'));
 ```
 
 ### Color References
@@ -30,10 +30,10 @@ router.define('layout.background', router.ref('brand.primary'))
 Colors can reference other colors in the palette, creating dependency chains that automatically update when source colors change.
 
 ```typescript
-router.define('interaction.link', router.ref('brand.primary'))
-router.define('scale.0', '#000')
-router.define('scale.100', 'hsl(0 100% 10%)')
-router.define('layout.background', router.ref('scale.0'))
+router.define('interaction.link', router.ref('brand.primary'));
+router.define('scale.0', '#000');
+router.define('scale.100', 'hsl(0 100% 10%)');
+router.define('layout.background', router.ref('scale.0'));
 ```
 
 ### Palette Creation and Management
@@ -42,18 +42,18 @@ Palettes must be explicitly created before colors can be defined within them:
 
 ```typescript
 // Create palettes first
-router.createPalette('base')
-router.createPalette('brand') 
+router.createPalette('base');
+router.createPalette('brand');
 
 // Now you can define colors
-router.define('base.background', '#ffffff')
-router.define('brand.primary', '#0066cc')
+router.define('base.background', '#ffffff');
+router.define('brand.primary', '#0066cc');
 
 // This would throw an error - palette doesn't exist:
 // router.define('theme.primary', '#ff0000') // PaletteNotFoundError
 
 // You can only set colors in existing palettes
-router.set('brand.primary', '#0088ff') // ✓ Valid
+router.set('brand.primary', '#0088ff'); // ✓ Valid
 // router.set('nonexistent.color', '#fff') // ✗ PaletteNotFoundError
 ```
 
@@ -63,25 +63,25 @@ Create new palettes that inherit from existing ones with selective overrides:
 
 ```typescript
 // Base palette
-router.createPalette('base')
-router.define('base.background', '#ffffff')
-router.define('base.surface', '#f5f5f5')
-router.define('base.primary', '#0066cc')
-router.define('base.on-primary', router.func('bestContrastWith', 'base.primary', 'white'))
+router.createPalette('base');
+router.define('base.background', '#ffffff');
+router.define('base.surface', '#f5f5f5');
+router.define('base.primary', '#0066cc');
+router.define('base.on-primary', router.func('bestContrastWith', 'base.primary', 'white'));
 
 // Dark palette - extends base palette with overrides
 router.createPalette('dark', {
   extends: 'base',
   overrides: {
-    'background': '#1a1a1a',
-    'surface': '#2d2d2d'
+    background: '#1a1a1a',
+    surface: '#2d2d2d',
     // primary and on-primary are inherited, on-primary recalculates automatically
-  }
-})
+  },
+});
 
 // Result:
 // dark.background => '#1a1a1a' (overridden)
-// dark.surface => '#2d2d2d' (overridden)  
+// dark.surface => '#2d2d2d' (overridden)
 // dark.primary => '#0066cc' (inherited from base)
 // dark.on-primary => recalculated contrast against dark.primary
 
@@ -89,10 +89,10 @@ router.createPalette('dark', {
 router.createPalette('dark-brand', {
   extends: 'dark',
   overrides: {
-    'primary': '#ff6600'
+    primary: '#ff6600',
     // background and surface inherited from dark, on-primary recalculates
-  }
-})
+  },
+});
 ```
 
 ### Dynamic Color Functions
@@ -101,25 +101,21 @@ Support for accessibility-focused contrast calculations and modern CSS color man
 
 ```typescript
 // Contrast-based selection
-router.define('layout.onBackground', 
-  router.func('bestContrastWith', 'layout.background', 'scale')
-)
-router.define('layout.border', 
-  router.func('minContrastWith', 'layout.background', 0.2)
-)
+router.define('layout.onBackground', router.func('bestContrastWith', 'layout.background', 'scale'));
+router.define('layout.border', router.func('minContrastWith', 'layout.background', 0.2));
 
 // CSS color functions
-router.define('accent', 
-  router.func('colorMix', 'brand.primary', '#f00', 0.6, 'lab')
-)
-router.define('hover-state', 
-  router.func('relativeTo', 'brand.primary', 'r g b / 0.8') // CSS relative color syntax
-)
+router.define('accent', router.func('colorMix', 'brand.primary', '#f00', 0.6, 'lab'));
+router.define(
+  'hover-state',
+  router.func('relativeTo', 'brand.primary', 'r g b / 0.8'), // CSS relative color syntax
+);
 
 // Color analysis functions
-router.define('isolatedColor', 
-  router.func('furthestFrom', 'brand') // Find the most isolated color in the brand palette
-)
+router.define(
+  'isolatedColor',
+  router.func('furthestFrom', 'brand'), // Find the most isolated color in the brand palette
+);
 ```
 
 ### Reactive Updates
@@ -127,8 +123,8 @@ router.define('isolatedColor',
 When source colors change, all dependent colors automatically recalculate based on the dependency graph.
 
 ```typescript
-router.set('brand.primary', '#0066cc') // triggers all dependents to update
-router.set('scale.0', '#111') // updates layout.background and layout.onBackground
+router.set('brand.primary', '#0066cc'); // triggers all dependents to update
+router.set('scale.0', '#111'); // updates layout.background and layout.onBackground
 ```
 
 ## Reactivity System
@@ -139,14 +135,14 @@ The system supports two update modes to balance performance and control:
 
 ```typescript
 // Auto Mode - immediate updates (default)
-const router = new ColorRouter({ mode: 'auto' })
-router.set('brand.primary', '#ff0000') // triggers immediate recalculation
+const router = new ColorRouter({ mode: 'auto' });
+router.set('brand.primary', '#ff0000'); // triggers immediate recalculation
 
 // Batch Mode - manual updates
-const router = new ColorRouter({ mode: 'batch' })
-router.set('brand.primary', '#ff0000')   // queued
-router.set('brand.secondary', '#00ff00') // queued
-router.flush() // now everything recalculates in optimal order
+const router = new ColorRouter({ mode: 'batch' });
+router.set('brand.primary', '#ff0000'); // queued
+router.set('brand.secondary', '#00ff00'); // queued
+router.flush(); // now everything recalculates in optimal order
 ```
 
 ### Event System
@@ -157,17 +153,17 @@ Comprehensive event system for tracking changes at different levels:
 // Global palette changes
 router.on('change', (changes) => {
   // changes = [{ key: 'brand.primary', oldValue: '#000', newValue: '#fff' }]
-})
+});
 
 // Specific color watching
 router.watch('layout.background', (newValue, oldValue) => {
-  console.log(`Background changed from ${oldValue} to ${newValue}`)
-})
+  console.log(`Background changed from ${oldValue} to ${newValue}`);
+});
 
 // Batch completion events
 router.on('batch-complete', (allChanges) => {
   // Fired after flush() completes
-})
+});
 ```
 
 ### Circular Dependency Detection
@@ -175,13 +171,13 @@ router.on('batch-complete', (allChanges) => {
 The system prevents circular references and throws errors when they're detected:
 
 ```typescript
-router.define('a', router.ref('b'))
-router.define('b', router.ref('a')) // throws CircularDependencyError
+router.define('a', router.ref('b'));
+router.define('b', router.ref('a')); // throws CircularDependencyError
 
 // Also detects during runtime changes
-router.define('a', router.ref('c'))
-router.define('b', router.ref('a'))
-router.set('c', router.ref('b')) // throws CircularDependencyError
+router.define('a', router.ref('c'));
+router.define('b', router.ref('a'));
+router.set('c', router.ref('b')); // throws CircularDependencyError
 ```
 
 ## Output Formats & Renderers
@@ -192,40 +188,40 @@ Work with entire palettes (groups of related colors):
 
 ```typescript
 // Define base palette
-router.define('base.background', '#ffffff')
-router.define('base.surface', '#f5f5f5')
-router.define('base.primary', '#0066cc')
-router.define('base.on-primary', router.func('bestContrastWith', 'base.primary', 'white'))
+router.define('base.background', '#ffffff');
+router.define('base.surface', '#f5f5f5');
+router.define('base.primary', '#0066cc');
+router.define('base.on-primary', router.func('bestContrastWith', 'base.primary', 'white'));
 
 // Get all base palette colors resolved
-router.resolvePalette('base')
+router.resolvePalette('base');
 // Output:
 // {
 //   'background': '#ffffff',
-//   'surface': '#f5f5f5', 
+//   'surface': '#f5f5f5',
 //   'primary': '#0066cc',
 //   'on-primary': '#ffffff'
 // }
 
 // Render entire palette with connections preserved
-const renderer = router.createRenderer('css-variables')
-renderer.render() // renders all palettes
+const renderer = router.createRenderer('css-variables');
+renderer.render(); // renders all palettes
 // Output:
 // {
 //   '--base-background': '#ffffff',
 //   '--base-surface': '#f5f5f5',
-//   '--base-primary': '#0066cc', 
+//   '--base-primary': '#0066cc',
 //   '--base-on-primary': 'var(--neutral-100)' // maintains reference if possible
 // }
 
 // Get all dependencies for a palette
-router.getPaletteDependencies('base')
+router.getPaletteDependencies('base');
 // Output: ['neutral.100'] // external colors that base palette depends on
 
 // Palette management
-router.getAllPalettes() // => [{ name: 'base', config: { extends?: string } }] - list all palettes
-router.copyPalette('base', 'light') // duplicate base as light
-router.deletePalette('unused') // remove palette
+router.getAllPalettes(); // => [{ name: 'base', config: { extends?: string } }] - list all palettes
+router.copyPalette('base', 'light'); // duplicate base as light
+router.deletePalette('unused'); // remove palette
 ```
 
 ### Basic Resolution
@@ -233,7 +229,7 @@ router.deletePalette('unused') // remove palette
 Get final computed color values:
 
 ```typescript
-router.resolve('layout.background')    // => '#ff0000'
+router.resolve('layout.background'); // => '#ff0000'
 ```
 
 ### Dependency Analysis
@@ -241,8 +237,8 @@ router.resolve('layout.background')    // => '#ff0000'
 Export connection information for advanced use cases:
 
 ```typescript
-router.getDependencies('layout.onBackground') // => ['layout.background', 'brand.primary']
-router.getConnectionGraph() // => full dependency tree with relationships
+router.getDependencies('layout.onBackground'); // => ['layout.background', 'brand.primary']
+router.getConnectionGraph(); // => full dependency tree with relationships
 ```
 
 ### Multiple Renderer Support
@@ -287,8 +283,8 @@ Renderers provide format-specific function implementations where possible:
 
 ```typescript
 // CSS Variables Renderer - uses native CSS functions when possible
-const renderer = router.createRenderer('css-variables')
-renderer.render()
+const renderer = router.createRenderer('css-variables');
+renderer.render();
 
 // Output for CSS:
 // {
@@ -298,8 +294,8 @@ renderer.render()
 // }
 
 // SCSS renderer - uses Sass functions
-const scssRenderer = router.createRenderer('scss')
-scssRenderer.render()
+const scssRenderer = router.createRenderer('scss');
+scssRenderer.render();
 
 // Output for SCSS:
 // {
@@ -315,41 +311,39 @@ Instead of boolean capability flags, each renderer defines functions that either
 
 ```typescript
 interface RendererCapabilities {
-  colorMix?: (color1: string, color2: string, ratio: string, colorSpace?: string) => string | null
-  relativeColor?: (baseColor: string, transform: string) => string | null
-  customProperty?: (name: string, fallback?: string) => string | null
-  calculation?: (expression: string) => string | null
+  colorMix?: (color1: string, color2: string, ratio: string, colorSpace?: string) => string | null;
+  relativeColor?: (baseColor: string, transform: string) => string | null;
+  customProperty?: (name: string, fallback?: string) => string | null;
+  calculation?: (expression: string) => string | null;
 }
 
 const cssModernCapabilities: RendererCapabilities = {
-  colorMix: (color1, color2, ratio, colorSpace = 'lab') => 
-    `color-mix(in ${colorSpace}, ${color1} ${ratio}, ${color2})`,
+  colorMix: (color1, color2, ratio, colorSpace = 'lab') => `color-mix(in ${colorSpace}, ${color1} ${ratio}, ${color2})`,
   relativeColor: (base, transform) => `rgb(from ${base} ${transform})`,
-  customProperty: (name, fallback) => 
-    fallback ? `var(--${name}, ${fallback})` : `var(--${name})`,
-  calculation: (expr) => `calc(${expr})`
-}
+  customProperty: (name, fallback) => (fallback ? `var(--${name}, ${fallback})` : `var(--${name})`),
+  calculation: (expr) => `calc(${expr})`,
+};
 
 const scssCapabilities: RendererCapabilities = {
   colorMix: (color1, color2, ratio) => `mix(${color1}, ${color2}, ${ratio})`, // no color space support
   relativeColor: () => null, // not supported, will use computed value
   customProperty: (name) => `${name}`,
-  calculation: (expr) => expr // Sass handles math natively
-}
+  calculation: (expr) => expr, // Sass handles math natively
+};
 
 const jsonCapabilities: RendererCapabilities = {
   colorMix: () => null, // always use computed values
   relativeColor: () => null,
   customProperty: () => null, // just use the color name as key
-  calculation: () => null
-}
+  calculation: () => null,
+};
 ```
 
 ### Smart Function Translation
 
 ```typescript
 // Original definition with color space
-router.define('accent', 
+router.define('accent',
   router.func('colorMix', 'brand.primary', '#f00', 0.6, 'oklch')
 )
 
@@ -367,19 +361,14 @@ router.define('accent',
 
 ```typescript
 // When rendering a color-mix function:
-const colorMixResult = capabilities.colorMix?.(
-  'var(--brand-primary)', 
-  '#f00', 
-  '60%', 
-  'lab'
-)
+const colorMixResult = capabilities.colorMix?.('var(--brand-primary)', '#f00', '60%', 'lab');
 
 if (colorMixResult) {
   // Use native implementation
-  output['--accent'] = colorMixResult
+  output['--accent'] = colorMixResult;
 } else {
   // Fall back to computed value using Culori
-  output['--accent'] = computeColorMix('brand.primary', '#f00', '60%', 'lab')
+  output['--accent'] = computeColorMix('brand.primary', '#f00', '60%', 'lab');
 }
 ```
 
@@ -474,37 +463,38 @@ The system leverages [Culori.js](https://culorijs.org/api/) for:
 ## Use Cases
 
 ### 1. Design System with Palette Inheritance
+
 Central color definitions with theme variations through palette extension:
 
 ```typescript
 // Define base design system palette
-router.define('design-system.primary', '#0066cc')
-router.define('design-system.secondary', '#ff6600')
-router.define('design-system.neutral-100', '#ffffff')
-router.define('design-system.neutral-900', '#1a1a1a')
+router.define('design-system.primary', '#0066cc');
+router.define('design-system.secondary', '#ff6600');
+router.define('design-system.neutral-100', '#ffffff');
+router.define('design-system.neutral-900', '#1a1a1a');
 
 // Create light theme palette
 router.createPalette('light', {
   extends: 'design-system',
   overrides: {
-    'background': router.ref('design-system.neutral-100'),
-    'surface': '#f5f5f5',
-    'on-background': router.ref('design-system.neutral-900')
-  }
-})
+    background: router.ref('design-system.neutral-100'),
+    surface: '#f5f5f5',
+    'on-background': router.ref('design-system.neutral-900'),
+  },
+});
 
 // Create dark theme palette
 router.createPalette('dark', {
   extends: 'light', // inherit light structure
   overrides: {
-    'background': router.ref('design-system.neutral-900'),
-    'surface': '#2d2d2d',
-    'on-background': router.ref('design-system.neutral-100')
-  }
-})
+    background: router.ref('design-system.neutral-900'),
+    surface: '#2d2d2d',
+    'on-background': router.ref('design-system.neutral-100'),
+  },
+});
 
 // All UI elements can reference either palette
-router.define('ui.button-bg', router.ref('light.primary')) // or 'dark.primary'
+router.define('ui.button-bg', router.ref('light.primary')); // or 'dark.primary'
 ```
 
 ### 2. Dynamic Palette Switching
@@ -516,7 +506,7 @@ Change active palette and everything updates reactively:
 // router.setActivePalette('dark')
 
 // Current approach: modify specific colors in any palette
-router.set('dark.primary', '#0088ff') // all references to dark.primary update
+router.set('dark.primary', '#0088ff'); // all references to dark.primary update
 ```
 
 ### 3. Accessibility Compliance
@@ -524,9 +514,9 @@ router.set('dark.primary', '#0088ff') // all references to dark.primary update
 Dynamic contrast calculations ensure readable combinations:
 
 ```typescript
-router.define('card.background', '#e3f2fd')
-router.define('card.text', router.func('bestContrastWith', 'card.background', '#333333'))
-router.define('card.border', router.func('minContrastWith', 'card.background', 1.5))
+router.define('card.background', '#e3f2fd');
+router.define('card.text', router.func('bestContrastWith', 'card.background', '#333333'));
+router.define('card.border', router.func('minContrastWith', 'card.background', 1.5));
 ```
 
 ### 4. CSS Integration
@@ -548,22 +538,18 @@ Export to CSS custom properties with proper variable relationships:
 Use new CSS color functions with palette references instead of literals:
 
 ```typescript
-router.define('brand.primary', '#0066cc')
-router.define('brand.accent-subtle', 
-  router.func('colorMix', 'brand.primary', 'transparent', '20%', 'lab')
-)
-router.define('brand.accent-highlight', 
-  router.func('relativeTo', 'brand.primary', 'calc(l + 0.2) c h')
-)
+router.define('brand.primary', '#0066cc');
+router.define('brand.accent-subtle', router.func('colorMix', 'brand.primary', 'transparent', '20%', 'lab'));
+router.define('brand.accent-highlight', router.func('relativeTo', 'brand.primary', 'calc(l + 0.2) c h'));
 
 // Create variations palette
 router.createPalette('brand-variations', {
   extends: 'brand',
   overrides: {
-    'hover': router.func('relativeTo', 'brand.primary', 'r g b / 0.8'),
-    'pressed': router.func('relativeTo', 'brand.primary', 'calc(l - 0.1) c h')
-  }
-})
+    hover: router.func('relativeTo', 'brand.primary', 'r g b / 0.8'),
+    pressed: router.func('relativeTo', 'brand.primary', 'calc(l - 0.1) c h'),
+  },
+});
 ```
 
 ### 6. Multi-Platform Export by Palette
@@ -574,8 +560,8 @@ Same palette structure, different output formats for various platforms:
 // Export specific palettes for different contexts
 // Note: renderPalette method is not implemented yet
 // Current approach: use the main render method which outputs all palettes
-const renderer = router.createRenderer('css-variables')
-const allOutput = renderer.render() // renders all palettes together
+const renderer = router.createRenderer('css-variables');
+const allOutput = renderer.render(); // renders all palettes together
 ```
 
 - **CSS**: Custom properties with optimal variable usage

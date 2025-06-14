@@ -19,15 +19,15 @@ export function relativeTo(baseColor: string, colorSpace: string, modifications:
     // Convert to the target color space
     const convertToSpace = converter(colorSpace as any);
     const colorInSpace = convertToSpace(parsed);
-    
+
     if (!colorInSpace) return baseColor;
 
     // Get the channel names for this color space
     const channelNames = getChannelNames(colorSpace);
-    
+
     // Apply modifications
     const modified = { ...colorInSpace };
-    
+
     modifications.forEach((mod, index) => {
       if (mod === null || index >= channelNames.length) return;
 
@@ -81,21 +81,21 @@ export function relativeTo(baseColor: string, colorSpace: string, modifications:
  */
 function getChannelNames(colorSpace: string): string[] {
   const channelMap: Record<string, string[]> = {
-    'rgb': ['r', 'g', 'b', 'alpha'],
-    'hsl': ['h', 's', 'l', 'alpha'],
-    'hsv': ['h', 's', 'v', 'alpha'],
-    'hwb': ['h', 'w', 'b', 'alpha'],
-    'lab': ['l', 'a', 'b', 'alpha'],
-    'lch': ['l', 'c', 'h', 'alpha'],
-    'oklch': ['l', 'c', 'h', 'alpha'],
-    'oklab': ['l', 'a', 'b', 'alpha'],
-    'xyz': ['x', 'y', 'z', 'alpha'],
+    rgb: ['r', 'g', 'b', 'alpha'],
+    hsl: ['h', 's', 'l', 'alpha'],
+    hsv: ['h', 's', 'v', 'alpha'],
+    hwb: ['h', 'w', 'b', 'alpha'],
+    lab: ['l', 'a', 'b', 'alpha'],
+    lch: ['l', 'c', 'h', 'alpha'],
+    oklch: ['l', 'c', 'h', 'alpha'],
+    oklab: ['l', 'a', 'b', 'alpha'],
+    xyz: ['x', 'y', 'z', 'alpha'],
     'a98-rgb': ['r', 'g', 'b', 'alpha'],
     'prophoto-rgb': ['r', 'g', 'b', 'alpha'],
-    'rec2020': ['r', 'g', 'b', 'alpha'],
-    'p3': ['r', 'g', 'b', 'alpha'],
+    rec2020: ['r', 'g', 'b', 'alpha'],
+    p3: ['r', 'g', 'b', 'alpha'],
   };
-  
+
   return channelMap[colorSpace] || ['r', 'g', 'b', 'alpha'];
 }
 
@@ -106,27 +106,30 @@ export const relativeToRenderers: Record<string, FunctionRenderer> = {
   'css-variables': (args: any[]): string => {
     const [baseColor, colorSpace, rawModifications] = args;
     const modifications = Array.isArray(rawModifications) ? rawModifications : [];
-    
+
     // Generate CSS color() function syntax
     const channelNames = getChannelNames(colorSpace);
-    const channels = modifications.map((mod: any, index: number) => {
-      const channelName = channelNames[index];
+    const channels = modifications
+      .map((mod: any, index: number) => {
+        const channelName = channelNames[index];
 
-      if (mod === null) {
-        return channelName; // Use original channel value
-      } else if (typeof mod === 'string') {
-        const operator = mod[0];
-        const valueStr = mod.slice(1);
-        if (['+', '-', '*', '/'].includes(operator) && valueStr.length > 0 && !isNaN(parseFloat(valueStr))) {
-          return `calc(${channelName} ${operator} ${valueStr})`;
+        if (mod === null) {
+          return channelName; // Use original channel value
+        } else if (typeof mod === 'string') {
+          const operator = mod[0];
+          const valueStr = mod.slice(1);
+          if (['+', '-', '*', '/'].includes(operator) && valueStr.length > 0 && !isNaN(parseFloat(valueStr))) {
+            return `calc(${channelName} ${operator} ${valueStr})`;
+          } else {
+            // Absolute value string or malformed operator string
+            return mod;
+          }
         } else {
-          // Absolute value string or malformed operator string
-          return mod;
+          // mod is a number
+          return mod.toString();
         }
-      } else { // mod is a number
-        return mod.toString();
-      }
-    }).slice(0, 3); // Only first 3 channels for most color spaces
+      })
+      .slice(0, 3); // Only first 3 channels for most color spaces
 
     // Handle alpha separately if provided
     const alphaChannel = modifications[3];
@@ -140,23 +143,24 @@ export const relativeToRenderers: Record<string, FunctionRenderer> = {
         } else {
           alphaStr = ` / ${alphaChannel}`;
         }
-      } else { // alphaChannel is a number
+      } else {
+        // alphaChannel is a number
         alphaStr = ` / ${alphaChannel}`;
       }
     }
 
     return `color(from ${baseColor} ${colorSpace} ${channels.join(' ')}${alphaStr})`;
   },
-  
-  'scss': (_args: any[]): string => {
+
+  scss: (_args: any[]): string => {
     // SCSS doesn't have native relative color syntax, so we compute the value
     return '';
   },
-  
-  'json': (_args: any[]): string => {
+
+  json: (_args: any[]): string => {
     // For JSON, always use computed values
     return '';
-  }
+  },
 };
 
 // Example usage:

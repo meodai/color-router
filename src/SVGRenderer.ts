@@ -73,24 +73,26 @@ export class SVGRenderer extends ColorRenderer {
     const { fontSize, itemPadding = [10, 5] } = this.#options;
 
     const allLabels = [title, ...Object.keys(colors)];
-    
-    const rows = allLabels.map((label) => {
-      const isHeader = label === title;
-      const { rectTop, textTop, height } = topPositions[label];
-      const colorValue = isHeader ? '' : colors[label];
 
-      const rect = `<rect class="palette-table__row ${
-        isHeader ? 'palette-table__row--header' : ''
-      }" width="${w}" height="${height}" y="${rectTop}" 
+    const rows = allLabels
+      .map((label) => {
+        const isHeader = label === title;
+        const { rectTop, textTop, height } = topPositions[label];
+        const colorValue = isHeader ? '' : colors[label];
+
+        const rect = `<rect class="palette-table__row ${
+          isHeader ? 'palette-table__row--header' : ''
+        }" width="${w}" height="${height}" y="${rectTop}" 
         ${colorValue ? `data-color="${colorValue}"` : ''} />`;
 
-      const text = `<text class="palette-table__label ${
-        isHeader ? 'palette-table__label--header' : ''
-      }" x="${itemPadding[0]}" y="${textTop}" font-size="${fontSize}"
+        const text = `<text class="palette-table__label ${
+          isHeader ? 'palette-table__label--header' : ''
+        }" x="${itemPadding[0]}" y="${textTop}" font-size="${fontSize}"
         ${colorValue ? `data-color="${colorValue}"` : ''}>${label}</text>`;
 
-      return rect + text;
-    }).join('');
+        return rect + text;
+      })
+      .join('');
 
     return `<g transform="translate(${left}, ${top})">
       <rect class="palette-table" width="${w}" height="${h}" />
@@ -105,7 +107,8 @@ export class SVGRenderer extends ColorRenderer {
     const allConnectionPoints: Record<string, ConnectionPoint> = {};
 
     tableItems.forEach((tableItem) => {
-      if (!tableItem.title || !tableItem.colors || !tableItem.topPositions || !tableItem.topPositions[tableItem.title]) return;
+      if (!tableItem.title || !tableItem.colors || !tableItem.topPositions || !tableItem.topPositions[tableItem.title])
+        return;
 
       // Create connection points for individual colors in the palette table
       Object.keys(tableItem.colors).forEach((colorKey) => {
@@ -132,7 +135,7 @@ export class SVGRenderer extends ColorRenderer {
       // Determine if the table (and thus its header) is on the left or right half of the diagram center.
       // This is crucial for the 'isLeft' property which dictates connection curve direction.
       const isPaletteTableOnLeftHalfOfDiagram = tableItem.left! + tableItem.w / 2 < tableBoundingRect.centerX;
-      
+
       // The dot is placed on the exact edge of the header, like individual color dots.
       const paletteNodeX = isPaletteTableOnLeftHalfOfDiagram ? tableItem.left! + tableItem.w : tableItem.left!;
       const paletteNodeY = tableItem.top! + headerPosition.rectTop + headerPosition.height / 2;
@@ -140,11 +143,11 @@ export class SVGRenderer extends ColorRenderer {
       allConnectionPoints[paletteKey] = {
         key: paletteKey,
         x: paletteNodeX, // Dot is centered on the header edge line
-        y: paletteNodeY, 
+        y: paletteNodeY,
         isLeft: isPaletteTableOnLeftHalfOfDiagram, // Curve direction based on table's half
         color: '#888888', // Distinct color for palette node dots/lines (can be same as header bg or contrasting)
         colorName: tableItem.title,
-        isPaletteNode: true, 
+        isPaletteNode: true,
       };
     });
 
@@ -172,7 +175,7 @@ export class SVGRenderer extends ColorRenderer {
           if (toPoint) {
             const connectionId = `${key}->${depKey}`;
             // No need to check reverse for visual graph, as it's directed
-            
+
             if (!processedConnections.has(connectionId)) {
               connections.push({ from: fromPoint, to: toPoint });
               processedConnections.add(connectionId);
@@ -193,65 +196,67 @@ export class SVGRenderer extends ColorRenderer {
 
     const { strokeWidth = 2 } = this.#options;
 
-    const backgroundPaths = connections.map((connection) => {
-      const { from, to } = connection;
-      const yDiff = Math.abs(from.y - to.y);
-      const amp = 40 + (yDiff * 0.3);
-      const path = `M ${from.x} ${from.y} C ${
-        from.x + (from.isLeft ? amp : -amp)
-      } ${from.y}, ${
-        to.x + (to.isLeft ? amp : -amp) 
-      } ${to.y}, ${to.x} ${to.y}`;
+    const backgroundPaths = connections
+      .map((connection) => {
+        const { from, to } = connection;
+        const yDiff = Math.abs(from.y - to.y);
+        const amp = 40 + yDiff * 0.3;
+        const path = `M ${from.x} ${from.y} C ${from.x + (from.isLeft ? amp : -amp)} ${from.y}, ${
+          to.x + (to.isLeft ? amp : -amp)
+        } ${to.y}, ${to.x} ${to.y}`;
 
-      // Background path is always solid
-      return `<path d="${path}" stroke="#000" stroke-width="${strokeWidth + 1}" fill="none" stroke-dasharray="none" />`;
-    }).join('');
+        // Background path is always solid
+        return `<path d="${path}" stroke="#000" stroke-width="${strokeWidth + 1}" fill="none" stroke-dasharray="none" />`;
+      })
+      .join('');
 
-    const colorPaths = connections.map((connection) => {
-      const { from, to } = connection;
-      const yDiff = Math.abs(from.y - to.y);
-      const amp = 40 + (yDiff * 0.3);
-      const path = `M ${from.x} ${from.y} C ${
-        from.x + (from.isLeft ? amp : -amp)
-      } ${from.y}, ${
-        to.x + (to.isLeft ? amp : -amp)
-      } ${to.y}, ${to.x} ${to.y}`;
+    const colorPaths = connections
+      .map((connection) => {
+        const { from, to } = connection;
+        const yDiff = Math.abs(from.y - to.y);
+        const amp = 40 + yDiff * 0.3;
+        const path = `M ${from.x} ${from.y} C ${from.x + (from.isLeft ? amp : -amp)} ${from.y}, ${
+          to.x + (to.isLeft ? amp : -amp)
+        } ${to.y}, ${to.x} ${to.y}`;
 
-      const fromDefType = this.#router.getDefinitionType(from.key);
-      const strokeDasharray = fromDefType === 'function' ? '5,5' : 'none';
+        const fromDefType = this.#router.getDefinitionType(from.key);
+        const strokeDasharray = fromDefType === 'function' ? '5,5' : 'none';
 
-      return `<path d="${path}" stroke="${from.color}" stroke-width="${strokeWidth}" fill="none" data-color="${from.color}" stroke-dasharray="${strokeDasharray}" />`;
-    }).join('');
+        return `<path d="${path}" stroke="${from.color}" stroke-width="${strokeWidth}" fill="none" data-color="${from.color}" stroke-dasharray="${strokeDasharray}" />`;
+      })
+      .join('');
 
     return `
       <g class="connections-bg">${backgroundPaths}</g>
       <g class="connections">${colorPaths}</g>
     `;
   }
-  
+
   #generateDots(connectionPoints: Record<string, ConnectionPoint>): string {
     const { dotRadius = 5 } = this.#options;
 
-    const dots = Object.values(connectionPoints).map((point) => {
-      if (point.isPaletteNode) {
-        // For palette nodes, draw a rotated square (diamond shape)
-        const sideLength = dotRadius * 1.6; 
-        const xCoord = point.x - sideLength / 2;
-        const yCoord = point.y - sideLength / 2;
-        // Rotation is around the center of the square (point.x, point.y)
-        return `<rect x="${xCoord}" y="${yCoord}" width="${sideLength}" height="${sideLength}" 
+    const dots = Object.values(connectionPoints)
+      .map((point) => {
+        if (point.isPaletteNode) {
+          // For palette nodes, draw a rotated square (diamond shape)
+          const sideLength = dotRadius * 1.6;
+          const xCoord = point.x - sideLength / 2;
+          const yCoord = point.y - sideLength / 2;
+          // Rotation is around the center of the square (point.x, point.y)
+          return `<rect x="${xCoord}" y="${yCoord}" width="${sideLength}" height="${sideLength}" 
           fill="#000000" stroke="#333333" stroke-width="1" 
           data-key="${point.key}" transform="rotate(45 ${point.x} ${point.y})" />`;
-      } else {
-        // For individual color nodes, draw a circle
-        const radius = dotRadius;
-        const fillColor = point.color;
-        const strokeColor = 'black';
-        return `<circle cx="${point.x}" cy="${point.y}" r="${radius}" 
+        } else {
+          // For individual color nodes, draw a circle
+          const radius = dotRadius;
+          const fillColor = point.color;
+          const strokeColor = 'black';
+          return `<circle cx="${point.x}" cy="${point.y}" r="${radius}" 
           fill="${fillColor}" stroke="${strokeColor}" stroke-width="1" 
           data-color="${point.color}" data-key="${point.key}" />`;
-      }
-    }).join('');
+        }
+      })
+      .join('');
 
     return `<g class="dots">${dots}</g>`;
   }
@@ -264,14 +269,18 @@ export class SVGRenderer extends ColorRenderer {
     const palettes = router.getAllPalettes();
 
     if (palettes.length === 0) {
-      return this.#createSVG(200, 100, '<text x="100" y="50" text-anchor="middle" font-family="monospace">No palettes defined</text>');
+      return this.#createSVG(
+        200,
+        100,
+        '<text x="100" y="50" text-anchor="middle" font-family="monospace">No palettes defined</text>',
+      );
     }
 
     // Create table items from palettes
     const tableItems: TableItem[] = palettes.map(({ name }: { name: string }) => {
       const keys = router.getAllKeysForPalette(name);
       const colors: Record<string, string> = {};
-      
+
       keys.forEach((key: string) => {
         const shortKey = key.split('.').slice(1).join('.');
         colors[shortKey] = router.resolve(key);
@@ -292,9 +301,7 @@ export class SVGRenderer extends ColorRenderer {
     // Generate SVG elements
     const connectionPaths = this.#generateConnectionPaths(connections);
     const dots = this.#generateDots(connectionPoints);
-    const tables = table.tableItems.map((item) => 
-      this.#createTableGroup(item, item.left!, item.top!)
-    ).join('');
+    const tables = table.tableItems.map((item) => this.#createTableGroup(item, item.left!, item.top!)).join('');
 
     const styles = `
       <style>
@@ -348,10 +355,6 @@ export class SVGRenderer extends ColorRenderer {
 
     const content = styles + connectionPaths + `<g class="tables">${tables}</g>` + dots;
 
-    return this.#createSVG(
-      table.tableBoundingRect.w,
-      table.tableBoundingRect.h,
-      content
-    );
+    return this.#createSVG(table.tableBoundingRect.w, table.tableBoundingRect.h, content);
   }
 }

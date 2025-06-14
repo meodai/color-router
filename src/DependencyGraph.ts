@@ -71,7 +71,7 @@ export class DependencyGraph {
       if (visitedForReachability.has(current)) continue;
       visitedForReachability.add(current);
       nodesToInclude.add(current);
-      (this.nodeToDependents.get(current) || []).forEach(dependent => queue.push(dependent));
+      (this.nodeToDependents.get(current) || []).forEach((dependent) => queue.push(dependent));
     }
     return this.topologicalSort([...nodesToInclude]);
   }

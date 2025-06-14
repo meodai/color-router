@@ -9,7 +9,7 @@ As PJ Onori eloquently explains in ["Systems, math and explosions"](https://pjon
 The Color Router System addresses this complexity through:
 
 - **Reactive Dependencies**: Colors update automatically when their dependencies change
-- **Controlled Palette Inheritance**: Extend palettes without exponential complexity growth  
+- **Controlled Palette Inheritance**: Extend palettes without exponential complexity growth
 - **Reference System**: Maintain relationships without manual synchronization
 - **Function-Based Logic**: Programmatic color generation instead of manual combinations
 
@@ -138,21 +138,21 @@ router.define('base.black', '#000000');
 
 ```typescript
 // Create light theme extending base
-router.createPalette('light', { 
+router.createPalette('light', {
   extends: 'base',
   overrides: {
-    'background': router.ref('base.white'),
-    'text': router.ref('base.black')
-  }
+    background: router.ref('base.white'),
+    text: router.ref('base.black'),
+  },
 });
 
 // Create dark theme extending light structure
-router.createPalette('dark', { 
+router.createPalette('dark', {
   extends: 'light',
   overrides: {
-    'background': router.ref('base.black'),
-    'text': router.ref('base.white')
-  }
+    background: router.ref('base.black'),
+    text: router.ref('base.white'),
+  },
 });
 ```
 
@@ -206,14 +206,15 @@ $card-primary-text: $scale-0;
 The Color Router System implements several strategies to prevent the [combinatorial explosions](https://pjonori.blog/posts/systems-math-explosions/) that plague traditional color systems:
 
 #### Reactive Dependencies Over Manual Synchronization
+
 Instead of manually maintaining color relationships across hundreds of combinations, the system automatically resolves dependencies:
 
 ```typescript
 // Traditional approach: manual synchronization nightmare
 const buttonPrimary = '#3498db';
-const buttonHover = '#2980b9';    // Must manually darken
-const buttonText = '#ffffff';     // Must manually choose contrast
-const cardBorder = '#2980b9';     // Must manually sync with hover
+const buttonHover = '#2980b9'; // Must manually darken
+const buttonText = '#ffffff'; // Must manually choose contrast
+const cardBorder = '#2980b9'; // Must manually sync with hover
 
 // Color Router approach: automatic dependency resolution
 router.define('brand.primary', '#3498db');
@@ -224,16 +225,18 @@ router.define('card.border', router.ref('button.hover'));
 ```
 
 #### Controlled Inheritance Over Unbounded Growth
+
 Palette inheritance creates predictable extension points rather than exponential color variations:
 
 ```typescript
 // Creates manageable hierarchy instead of flat color explosion
-router.createPalette('base');        // Foundation colors
-router.createPalette('light', { extends: 'base' });  // Light theme variants
-router.createPalette('dark', { extends: 'base' });   // Dark theme variants
+router.createPalette('base'); // Foundation colors
+router.createPalette('light', { extends: 'base' }); // Light theme variants
+router.createPalette('dark', { extends: 'base' }); // Dark theme variants
 ```
 
 #### Function-Based Logic Over Hardcoded Combinations
+
 Mathematical functions generate colors programmatically, reducing the need for pre-defined combinations:
 
 ```typescript
@@ -269,7 +272,7 @@ const colorInfo = router.resolve('button.hover');
 
 This self-documenting nature prevents the system from becoming a "black box" where relationships are opaque. Instead of wondering "why is this color this value?", the intent is preserved and queryable. This documentation of relationships addresses what Onori identifies as the core problem: when systems become too complex to understand, they become unpredictable and chaotic.
 
-By capturing not just *what* colors exist, but *why* they exist and *how* they relate to each other, the Color Router System maintains comprehensibility even as it scales.
+By capturing not just _what_ colors exist, but _why_ they exist and _how_ they relate to each other, the Color Router System maintains comprehensibility even as it scales.
 
 ### ColorRouter
 

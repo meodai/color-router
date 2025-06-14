@@ -45,21 +45,13 @@ export interface TableViewOptions {
 /**
  * Calculate diagonal of a rectangle
  */
-const diagonal = (rect: { w: number; h: number }): number => 
-  Math.sqrt(Math.pow(rect.w, 2) + Math.pow(rect.h, 2));
+const diagonal = (rect: { w: number; h: number }): number => Math.sqrt(Math.pow(rect.w, 2) + Math.pow(rect.h, 2));
 
 /**
  * Arranges rectangles around a circle
  */
-export const tableView = (
-  sizes: TableItem[], 
-  options: TableViewOptions = {}
-): TableViewResult => {
-  const {
-    gap = 0,
-    useMaxDiagonal = true,
-    padding = 0.2,
-  } = options;
+export const tableView = (sizes: TableItem[], options: TableViewOptions = {}): TableViewResult => {
+  const { gap = 0, useMaxDiagonal = true, padding = 0.2 } = options;
 
   let tableItems = [...sizes];
 
@@ -72,9 +64,7 @@ export const tableView = (
   tableItems = tableItems.map((item) => {
     const { w, h } = item;
     const itemMaxSide = Math.max(w, h);
-    const itemDiagonal = diagonal(
-      useMaxDiagonal ? { w: itemMaxSide, h: itemMaxSide } : item
-    );
+    const itemDiagonal = diagonal(useMaxDiagonal ? { w: itemMaxSide, h: itemMaxSide } : item);
     diagonalsTotal += itemDiagonal;
     item.diagonal = itemDiagonal;
     item.diagonalHalf = itemDiagonal / 2;
@@ -141,14 +131,9 @@ export const tableView = (
 export const createTableItemFromPalette = (
   title: string,
   colors: Record<string, string>,
-  options: TableViewOptions = {}
+  options: TableViewOptions = {},
 ): TableItem => {
-  const {
-    widthPerLetter = 7,
-    fontSize = 10,
-    lineHeight = 1.5,
-    itemPadding = [10, 5],
-  } = options;
+  const { widthPerLetter = 7, fontSize = 10, lineHeight = 1.5, itemPadding = [10, 5] } = options;
 
   const allLabels = [title, ...Object.keys(colors)];
   const maxLabelLength = Math.max(...allLabels.map((label) => label.length));

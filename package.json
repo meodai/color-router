@@ -23,6 +23,7 @@
     "build:demo": "vite build --mode demo",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.dev.json",
+    "format": "prettier --write \"src/**/*.ts\" \"*.{js,json,md,html,css}\"",
     "prepublishOnly": "npm run build:lib"
   },
   "keywords": [
@@ -40,6 +41,7 @@
   "devDependencies": {
     "@types/culori": "^4.0.0",
     "@types/node": "^24.0.1",
+    "prettier": "^3.5.3",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vite-plugin-dts": "^4.5.4"

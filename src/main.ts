@@ -2,14 +2,14 @@ import * as culori from 'culori';
 import { ColorRouter } from './ColorRouter';
 import { ColorRenderer } from './ColorRenderer';
 import { SVGRenderer } from './SVGRenderer';
-import { 
+import {
   bestContrastWithRenderers,
   colorMixRenderers,
   relativeToRenderers,
   minContrastWithRenderers,
   lightenRenderers,
   darkenRenderers,
-  furthestFromRenderers
+  furthestFromRenderers,
 } from './colorFunctions';
 
 // --- UI & DEMO LOGIC ---
@@ -27,13 +27,13 @@ function registerAllFunctionRenderers() {
     { name: 'minContrastWith', renderers: minContrastWithRenderers },
     { name: 'lighten', renderers: lightenRenderers },
     { name: 'darken', renderers: darkenRenderers },
-    { name: 'furthestFrom', renderers: furthestFromRenderers }
+    { name: 'furthestFrom', renderers: furthestFromRenderers },
   ];
 
   // Register renderers for all formats
   const formats: ('css-variables' | 'scss' | 'json')[] = ['css-variables', 'scss', 'json'];
-  
-  formats.forEach(format => {
+
+  formats.forEach((format) => {
     const renderer = router.createRenderer(format);
     rendererSets.forEach(({ name, renderers }) => {
       const formatRenderer = renderers[format];
@@ -50,7 +50,9 @@ registerAllFunctionRenderers();
 function logEvent(message: string): void {
   const container = document.getElementById('event-log-container');
   if (container) {
-    container.innerHTML = `<p><span class="text-gray-400">${new Date().toLocaleTimeString()}</span> &mdash; ${message}</p>` + container.innerHTML;
+    container.innerHTML =
+      `<p><span class="text-gray-400">${new Date().toLocaleTimeString()}</span> &mdash; ${message}</p>` +
+      container.innerHTML;
   }
 }
 
@@ -60,7 +62,7 @@ router.setLogCallback(logEvent);
 function renderPalettes(): void {
   const container = document.getElementById('palettes-container');
   if (!container) return;
-  
+
   container.innerHTML = '';
   // Use a getter method to access private palettes
   router.getAllPalettes().forEach(({ name, config }) => {
@@ -70,11 +72,11 @@ function renderPalettes(): void {
     if (config.extends) {
       titleHtml += `<p class="text-sm text-gray-500">extends <span class="font-medium text-indigo-600">${config.extends}</span></p>`;
     }
-    
+
     const keys = router.getAllKeysForPalette(name);
     let colorsHtml = '<div class="mt-4 space-y-3">';
     if (keys.length > 0) {
-      keys.sort().forEach(key => {
+      keys.sort().forEach((key) => {
         const shortKey = key.split('.').slice(1).join('.');
         const definition = router.getDefinitionForKey(key);
         const resolvedValue = router.resolve(key) || '#transparent';
@@ -110,7 +112,7 @@ function renderOutput(): void {
   const format = activeTab?.dataset.tab || 'css-variables';
   const outputContainer = document.getElementById('output-container');
   if (!outputContainer) return;
-  
+
   try {
     if (format === 'svg') {
       // SVG visualization mode
@@ -120,10 +122,10 @@ function renderOutput(): void {
         padding: 0.1,
         fontSize: 10,
         strokeWidth: 2,
-        dotRadius: 4
+        dotRadius: 4,
       });
       const svgContent = svgRenderer.render();
-      
+
       outputContainer.innerHTML = `
         <div class="bg-white p-4 h-96 overflow-auto flex items-center justify-center svg-container">
           ${svgContent}
@@ -139,7 +141,7 @@ function renderOutput(): void {
           </div>
         `;
       }
-      
+
       const renderer = router.createRenderer(format as 'css-variables' | 'scss' | 'json');
       const newCodeEl = document.getElementById('output-code')!;
       newCodeEl.textContent = renderer.render();
@@ -162,12 +164,12 @@ function renderOutput(): void {
 function renderColorDemo(): void {
   const container = document.getElementById('color-demo-container');
   if (!container) return;
-  
+
   try {
     // Get the CSS variables output and inject it into a style element
     const renderer = router.createRenderer('css-variables');
     const cssOutput = renderer.render();
-    
+
     // Create or update the demo styles
     let demoStyle = document.getElementById('demo-styles') as HTMLStyleElement;
     if (!demoStyle) {
@@ -206,10 +208,10 @@ function renderColorDemo(): void {
 function renderSVGVisualization(): void {
   const container = document.getElementById('svg-visualization-container');
   if (!container) return;
-  
+
   try {
     const showConnections = (document.getElementById('show-connections') as HTMLInputElement)?.checked ?? true;
-    
+
     const svgRenderer = new SVGRenderer(router, {
       showConnections,
       gap: 25,
@@ -218,11 +220,11 @@ function renderSVGVisualization(): void {
       strokeWidth: 1.5,
       dotRadius: 3,
       lineHeight: 1.4,
-      widthPerLetter: 6
+      widthPerLetter: 6,
     });
-    
+
     const svgContent = svgRenderer.render();
-    
+
     container.innerHTML = `
       <div class="svg-container w-full h-full flex items-center justify-center">
         ${svgContent}
@@ -262,13 +264,17 @@ document.getElementById('define-color')?.addEventListener('click', () => {
   const keyInput = document.getElementById('color-key') as HTMLInputElement;
   const valueInput = document.getElementById('color-value') as HTMLInputElement;
   if (!keyInput?.value || !valueInput?.value) return;
-  
+
   try {
     let value: any = valueInput.value.trim();
     const refMatch = value.match(/ref\(['"](.*?)['"]\)/);
     const bestContrastMatch = value.match(/bestContrastWith\\(['\\"](.*?)['\\"](?:,\\s*['\\"](.*?)['\\"])?\\)/);
-    const colorMixMatch = value.match(/colorMix\\(['\\"](.*?)['\\"],\\s*['\\"](.*?)['\\"](?:,\\s*(['\\"]*[\\d.%]+['\\"]*))?\\s*(?:,\\s*['\\"](.*?)['\\"])?\\)/);
-    const relativeMatch = value.match(/relativeTo\\(\\s*['\\"](.*?)['\\"]\\s*,\\s*['\\"](.*?)['\\"]\\s*,\\s*(\\[.*?\\])\\s*\\)/);
+    const colorMixMatch = value.match(
+      /colorMix\\(['\\"](.*?)['\\"],\\s*['\\"](.*?)['\\"](?:,\\s*(['\\"]*[\\d.%]+['\\"]*))?\\s*(?:,\\s*['\\"](.*?)['\\"])?\\)/,
+    );
+    const relativeMatch = value.match(
+      /relativeTo\\(\\s*['\\"](.*?)['\\"]\\s*,\\s*['\\"](.*?)['\\"]\\s*,\\s*(\\[.*?\\])\\s*\\)/,
+    );
     const minContrastMatch = value.match(/minContrastWith\\(['\\"](.*?)['\\"](?:,\\s*([\\d.]+))?\\)/);
     const lightenMatch = value.match(/lighten\(['"](.*?)['"],\s*([\d.]+)\)/);
     const darkenMatch = value.match(/darken\(['"](.*?)['"],\s*([\d.]+)\)/);
@@ -285,15 +291,15 @@ document.getElementById('define-color')?.addEventListener('click', () => {
       const color2 = colorMixMatch[2];
       let ratio = colorMixMatch[3] || '0.5';
       const colorSpace = colorMixMatch[4] || 'lab';
-      
+
       // Clean up quotes from ratio if present
       ratio = ratio.replace(/['"]/g, '');
-      
+
       // Convert percentage string to numeric if needed
       if (ratio.includes('%')) {
         ratio = (parseFloat(ratio) / 100).toString();
       }
-      
+
       value = router.func('colorMix', color1, color2, parseFloat(ratio), colorSpace);
     } else if (relativeMatch) {
       const baseColor = relativeMatch[1];
@@ -304,7 +310,9 @@ document.getElementById('define-color')?.addEventListener('click', () => {
         const parsedModifications = JSON.parse(modificationsString.replace(/'/g, '"'));
         value = router.func('relativeTo', baseColor, colorSpace, parsedModifications);
       } catch (e) {
-        throw new Error(`Invalid modifications array format for relativeTo: ${modificationsString}. ${ (e as Error).message }`);
+        throw new Error(
+          `Invalid modifications array format for relativeTo: ${modificationsString}. ${(e as Error).message}`,
+        );
       }
     } else if (minContrastMatch) {
       const ratio = minContrastMatch[2] ? parseFloat(minContrastMatch[2]) : 1.5;
@@ -318,13 +326,13 @@ document.getElementById('define-color')?.addEventListener('click', () => {
       const args = funcMatch[2] ? JSON.parse(`[${funcMatch[2].replace(/'/g, '"')}]`) : [];
       value = router.func(name, ...args);
     }
-    
+
     if (router.has(keyInput.value)) {
       router.set(keyInput.value, value);
     } else {
       router.define(keyInput.value, value);
     }
-    
+
     renderPalettes();
     renderOutput();
     renderColorDemo();
@@ -342,9 +350,9 @@ document.getElementById('clear-form')?.addEventListener('click', () => {
   logEvent('Form cleared');
 });
 
-document.querySelectorAll('.tab-button').forEach(btn => {
+document.querySelectorAll('.tab-button').forEach((btn) => {
   btn.addEventListener('click', (e) => {
-    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-button').forEach((b) => b.classList.remove('active'));
     (e.target as HTMLElement).classList.add('active');
     renderOutput();
     renderColorDemo();
@@ -374,13 +382,13 @@ document.addEventListener('click', (e) => {
 function editColor(key: string): void {
   const definition = router.getDefinitionForKey(key);
   const currentValue = router.getRawValue(definition); // Use getRawValue for editing (no quotes)
-  
+
   // Pre-fill the form with current values
   const keyInput = document.getElementById('color-key') as HTMLInputElement;
   const valueInput = document.getElementById('color-value') as HTMLInputElement;
   if (keyInput) keyInput.value = key;
   if (valueInput) valueInput.value = currentValue;
-  
+
   // Scroll to and highlight the form
   const colorForm = keyInput?.closest('div')?.closest('div') as HTMLElement;
   if (colorForm) {
@@ -388,7 +396,7 @@ function editColor(key: string): void {
     colorForm.style.border = '2px solid #4f46e5';
     colorForm.style.borderRadius = '8px';
     colorForm.style.padding = '1rem';
-    
+
     // Remove highlight after a few seconds
     setTimeout(() => {
       colorForm.style.border = '';
@@ -396,45 +404,48 @@ function editColor(key: string): void {
       colorForm.style.padding = '';
     }, 3000);
   }
-  
+
   logEvent(`Editing color '${key}' - current value: ${currentValue}`);
 }
 
 // Register a function to find the closest color in a palette to a given color
-router.registerFunction('closestColor', function(this: ColorRouter, target: string, paletteName: string, minDistance: number = 0): string {
-  const keys = this.getAllKeysForPalette(paletteName);
-  if (!keys.length) return '#transparent';
-  
-  const targetColor = culori.parse(target);
-  if (!targetColor) return '#transparent';
-  
-  let closestKey = '';
-  let closestDist = Infinity;
+router.registerFunction(
+  'closestColor',
+  function (this: ColorRouter, target: string, paletteName: string, minDistance: number = 0): string {
+    const keys = this.getAllKeysForPalette(paletteName);
+    if (!keys.length) return '#transparent';
 
-  const differenceFunction = culori.differenceCiede2000(1, 1, 1);
+    const targetColor = culori.parse(target);
+    if (!targetColor) return '#transparent';
 
-  for (const key of keys) {
-    const resolvedColor = this.resolve(key);
-    const color = culori.parse(resolvedColor);
-    
-    if (!color) continue;
-    
-    const dist = differenceFunction(targetColor, color);
-    
-    if (dist < closestDist && dist >= minDistance) {
-      closestDist = dist;
-      closestKey = key;
+    let closestKey = '';
+    let closestDist = Infinity;
+
+    const differenceFunction = culori.differenceCiede2000(1, 1, 1);
+
+    for (const key of keys) {
+      const resolvedColor = this.resolve(key);
+      const color = culori.parse(resolvedColor);
+
+      if (!color) continue;
+
+      const dist = differenceFunction(targetColor, color);
+
+      if (dist < closestDist && dist >= minDistance) {
+        closestDist = dist;
+        closestKey = key;
+      }
     }
-  }
-  
-  const result = closestKey ? this.resolve(closestKey) : '';
-  
-  return result;
-}.bind(router));
+
+    const result = closestKey ? this.resolve(closestKey) : '';
+
+    return result;
+  }.bind(router),
+);
 
 // --- Initial State & Demo Setup ---
 function setupInitialState(): void {
-  logEvent("Initializing ColorRouter demo...");
+  logEvent('Initializing ColorRouter demo...');
 
   // Base colors palette - foundation colors
   router.createPalette('base');
@@ -446,8 +457,8 @@ function setupInitialState(): void {
   // --- RAMP (was scale) palette (0-900) - systematic neutral ramp based on base.dark
   // Create this before demo palette since demo.contrast references it
   router.createPalette('ramp');
-  router.define('ramp.0', router.ref('base.light'));  // Pure light
-  router.define('ramp.900', router.ref('base.dark'));  // Pure dark
+  router.define('ramp.0', router.ref('base.light')); // Pure light
+  router.define('ramp.900', router.ref('base.dark')); // Pure dark
   // Generate ramp.100 to ramp.800 using a loop
   for (let i = 8; i >= 1; i--) {
     const step = i * 0.1;
@@ -458,7 +469,7 @@ function setupInitialState(): void {
   router.createPalette('demo');
   router.define('demo.primary', router.ref('base.accent'));
   router.define('demo.secondary', router.ref('base.attention'));
-  
+
   // Demonstrate all function types with their renderers
   router.define('demo.lighter', router.func('lighten', 'demo.primary', 0.2));
   router.define('demo.darker', router.func('darken', 'demo.primary', 0.2));
@@ -471,7 +482,6 @@ function setupInitialState(): void {
   router.createPalette('scale');
   router.define('scale.0', router.ref('base.accent'));
   router.define('scale.4', router.ref('base.attention'));
-
 
   router.define('scale.1', router.func('colorMix', 'scale.0', 'scale.4', 0.25, 'oklab'));
   router.define('scale.2', router.func('colorMix', 'scale.0', 'scale.4', 0.5, 'oklab'));
@@ -489,21 +499,26 @@ function setupInitialState(): void {
   router.define('surface.line', router.func('minContrastWith', 'surface.background', 'ramp', 1.7)); // Subtle border
 
   router.flush();
-  
+
   // Debug: Check what furthestFrom actually returns
   console.log('Scale palette keys:', router.getAllKeysForPalette('scale'));
-  console.log('Scale palette colors:', router.getAllKeysForPalette('scale').map(k => ({ key: k, color: router.resolve(k) })));
+  console.log(
+    'Scale palette colors:',
+    router.getAllKeysForPalette('scale').map((k) => ({ key: k, color: router.resolve(k) })),
+  );
   console.log('demo.furthest resolves to:', router.resolve('demo.furthest'));
-  
+
   // Demonstrate renderer outputs
   logRendererComparison();
-  
-  logEvent("• BASE: Foundation colors (light, dark, accent, attention)");
-  logEvent("• DEMO: Function demonstration (colorMix, lighten, darken, bestContrastWith, relativeTo, minContrastWith, furthestFrom)");
-  logEvent("• SCALE: Systematic neutral scale - 900=base.dark, others lighten progressively");
-  logEvent("• SURFACE: Default UI surface colors (background, text, interaction, lines)");
-  logEvent("Try changing base.dark to see entire scale update automatically!");
-  
+
+  logEvent('• BASE: Foundation colors (light, dark, accent, attention)');
+  logEvent(
+    '• DEMO: Function demonstration (colorMix, lighten, darken, bestContrastWith, relativeTo, minContrastWith, furthestFrom)',
+  );
+  logEvent('• SCALE: Systematic neutral scale - 900=base.dark, others lighten progressively');
+  logEvent('• SURFACE: Default UI surface colors (background, text, interaction, lines)');
+  logEvent('Try changing base.dark to see entire scale update automatically!');
+
   renderPalettes();
   renderOutput();
   renderColorDemo();
@@ -511,19 +526,21 @@ function setupInitialState(): void {
 }
 
 function logRendererComparison(): void {
-  logEvent("🔧 RENDERER COMPARISON:");
-  
+  logEvent('🔧 RENDERER COMPARISON:');
+
   const formats: ('css-variables' | 'scss' | 'json')[] = ['css-variables', 'scss', 'json'];
-  
-  formats.forEach(format => {
+
+  formats.forEach((format) => {
     const renderer = router.createRenderer(format);
     const output = renderer.render();
-    
+
     // Log a sample of the renderer output
     const lines = output.split('\n').slice(0, 8).join('\n');
-    logEvent(`<strong>${format.toUpperCase()}:</strong><br><code style="font-size: 11px; color: #666; white-space: pre-wrap;">${lines}...</code>`);
+    logEvent(
+      `<strong>${format.toUpperCase()}:</strong><br><code style="font-size: 11px; color: #666; white-space: pre-wrap;">${lines}...</code>`,
+    );
   });
-  
+
   // Also log some specific variables for debugging
   const cssRenderer = router.createRenderer('css-variables');
   const cssOutput = cssRenderer.render();
@@ -537,9 +554,11 @@ function logRendererComparison(): void {
 
 router.on('change', (e) => {
   const event = e as CustomEvent<Array<{ key: string; oldValue?: string; newValue: string }>>;
-  event.detail.forEach(change => {
+  event.detail.forEach((change) => {
     const oldValue = change.oldValue || 'undefined';
-    logEvent(`CHANGE: '${change.key}' from ${oldValue} to <span class="font-bold" style="color:${change.newValue}; text-shadow: 0 0 5px rgba(0,0,0,0.5);">${change.newValue}</span>`);
+    logEvent(
+      `CHANGE: '${change.key}' from ${oldValue} to <span class="font-bold" style="color:${change.newValue}; text-shadow: 0 0 5px rgba(0,0,0,0.5);">${change.newValue}</span>`,
+    );
   });
 });
 
