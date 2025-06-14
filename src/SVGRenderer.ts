@@ -234,13 +234,14 @@ export class SVGRenderer extends ColorRenderer {
 
     const dots = Object.values(connectionPoints).map((point) => {
       if (point.isPaletteNode) {
-        // For palette nodes, draw a square (rect)
-        const sideLength = dotRadius * 1.6; // Make square slightly larger than circle diameter for similar visual weight
+        // For palette nodes, draw a rotated square (diamond shape)
+        const sideLength = dotRadius * 1.6; 
         const xCoord = point.x - sideLength / 2;
         const yCoord = point.y - sideLength / 2;
+        // Rotation is around the center of the square (point.x, point.y)
         return `<rect x="${xCoord}" y="${yCoord}" width="${sideLength}" height="${sideLength}" 
           fill="#000000" stroke="#333333" stroke-width="1" 
-          data-key="${point.key}" />`;
+          data-key="${point.key}" transform="rotate(45 ${point.x} ${point.y})" />`;
       } else {
         // For individual color nodes, draw a circle
         const radius = dotRadius;
