@@ -8,7 +8,7 @@ import {
   darken,
   furthestFrom,
   closestColor,
-} from './colorFunctions';
+} from '../colorFunctions';
 import {
   PaletteConfig,
   ColorChangeEvent,
@@ -17,7 +17,7 @@ import {
   ColorDefinition,
   LogCallback,
   ColorRendererClass,
-} from './types';
+} from '../types';
 import { PaletteError, CircularDependencyError } from './errors';
 import { DependencyGraph } from './DependencyGraph';
 import { PaletteManager } from './PaletteManager';

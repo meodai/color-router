@@ -1,5 +1,5 @@
 import { parse, formatHex, converter } from 'culori';
-import type { FunctionRenderer } from '../ColorRenderer';
+import type { FunctionRenderer } from '../renderers';
 
 export function lighten(color: string, amount: number): string {
   try {

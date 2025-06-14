@@ -1,6 +1,6 @@
 import { wcagContrast, parse } from 'culori';
-import type { ColorRouter } from '../ColorRouter';
-import type { FunctionRenderer } from '../ColorRenderer';
+import type { ColorRouter } from '../router';
+import type { FunctionRenderer } from '../renderers';
 
 /**
  * Finds a color from a specified palette (or black/white as a fallback) that meets a minimum WCAG contrast ratio

@@ -1,4 +1,4 @@
-import { PaletteConfig, ColorDefinition, LogCallback } from './types';
+import { PaletteConfig, ColorDefinition, LogCallback } from '../types';
 import { PaletteError, CircularDependencyError } from './errors';
 import { ColorRouter } from './ColorRouter';
 

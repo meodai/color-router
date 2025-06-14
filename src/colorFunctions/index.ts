@@ -7,4 +7,4 @@ export { darken, darkenRenderers } from './darken';
 export { furthestFrom, furthestFromRenderers } from './furthestFrom';
 export { closestColor, closestColorRenderers } from './closestColor';
 
-export type { FunctionRenderer } from '../ColorRenderer';
+export type { FunctionRenderer } from '../renderers';

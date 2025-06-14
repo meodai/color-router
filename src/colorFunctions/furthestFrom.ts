@@ -1,6 +1,6 @@
 import { parse, converter } from 'culori';
-import type { ColorRouter } from '../ColorRouter';
-import type { FunctionRenderer } from '../ColorRenderer';
+import type { ColorRouter } from '../router';
+import type { FunctionRenderer } from '../renderers';
 
 /**
  * Calculates the CIELAB Delta E (Euclidean distance) between two colors.

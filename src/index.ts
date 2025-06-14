@@ -1,9 +1,7 @@
-export { ColorRouter } from './ColorRouter';
+export { ColorRouter } from './router';
 export { ColorReference, ColorFunction } from './types';
-export { PaletteError, CircularDependencyError } from './errors';
-export { ColorRenderer } from './ColorRenderer';
-export { SVGRenderer } from './SVGRenderer';
-export { tableView, createTableItemFromPalette } from './TableViewRenderer';
+export { PaletteError, CircularDependencyError } from './router';
+export { ColorRenderer, SVGRenderer, tableView, createTableItemFromPalette } from './renderers';
 export type {
   ColorValue,
   PaletteName,
@@ -13,6 +11,4 @@ export type {
   ColorChangeEvent,
   ColorRendererClass,
 } from './types';
-export type { RenderFormat, FunctionRenderer } from './ColorRenderer';
-export type { TableItem, TableBoundingRect, TableViewResult, TableViewOptions } from './TableViewRenderer';
-export type { SVGRenderOptions, ConnectionPoint, Connection } from './SVGRenderer';
+export type { RenderFormat, FunctionRenderer, TableItem, TableBoundingRect, TableViewResult, TableViewOptions, SVGRenderOptions, ConnectionPoint, Connection } from './renderers';

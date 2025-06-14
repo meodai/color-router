@@ -1,5 +1,5 @@
 import { parse, formatHex, converter } from 'culori';
-import type { FunctionRenderer } from '../ColorRenderer';
+import type { FunctionRenderer } from '../renderers';
 
 /**
  * Modifies a color relative to its current values in the specified color space

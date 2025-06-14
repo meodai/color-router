@@ -1,7 +1,6 @@
 import * as culori from 'culori';
-import { ColorRouter } from './ColorRouter';
-import { ColorRenderer } from './ColorRenderer';
-import { SVGRenderer } from './SVGRenderer';
+import { ColorRouter } from './router';
+import { ColorRenderer, SVGRenderer } from './renderers';
 import {
   bestContrastWithRenderers,
   colorMixRenderers,

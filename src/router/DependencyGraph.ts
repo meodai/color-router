@@ -1,4 +1,4 @@
-import { ColorDefinition, ColorReference, ColorFunction, LogCallback } from './types';
+import { ColorDefinition, ColorReference, ColorFunction, LogCallback } from '../types';
 import { CircularDependencyError } from './errors';
 
 /**

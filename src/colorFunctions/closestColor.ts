@@ -1,6 +1,6 @@
 import { parse, differenceEuclidean } from 'culori';
-import type { ColorRouter } from '../ColorRouter';
-import type { FunctionRenderer } from '../ColorRenderer';
+import type { ColorRouter } from '../router';
+import type { FunctionRenderer } from '../renderers';
 
 /**
  * Finds the color in a specified palette that is perceptually closest to a target color.

@@ -1,5 +1,5 @@
 import { parse, interpolate, formatHex } from 'culori';
-import type { FunctionRenderer } from '../ColorRenderer';
+import type { FunctionRenderer } from '../renderers';
 
 /**
  * Mixes two colors together in a specified color space.

@@ -1,5 +1,5 @@
 import { parse, formatHex, converter } from 'culori';
-import type { FunctionRenderer } from '../ColorRenderer';
+import type { FunctionRenderer } from '../renderers';
 
 export function darken(color: string, amount: number): string {
   try {

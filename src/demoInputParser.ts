@@ -1,4 +1,4 @@
-import { ColorRouter } from './ColorRouter';
+import { ColorRouter } from './router';
 import { ColorDefinition } from './types';
 
 /**

@@ -1,5 +1,5 @@
 import { ColorRenderer, RenderFormat } from './ColorRenderer';
-import { ColorRouter } from './router';
+import { ColorRouter } from '../router';
 import { tableView, createTableItemFromPalette, TableItem, TableViewOptions } from './TableViewRenderer';
 
 export interface SVGRenderOptions extends TableViewOptions {

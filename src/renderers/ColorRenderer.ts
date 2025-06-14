@@ -1,5 +1,5 @@
-import { ColorRouter } from './router';
-import { ColorDefinition, ColorReference, ColorFunction } from './types';
+import { ColorRouter } from '../router';
+import { ColorDefinition, ColorReference, ColorFunction } from '../types';
 import {
   bestContrastWithRenderers,
   colorMixRenderers,
@@ -8,7 +8,7 @@ import {
   lightenRenderers,
   darkenRenderers,
   furthestFromRenderers,
-} from './colorFunctions';
+} from '../colorFunctions';
 
 /**
  * Defines the possible output formats for rendering colors.
