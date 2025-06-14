@@ -151,18 +151,7 @@ export class ColorRouter {
     // ResolutionDependencySet also contains these.
     
     const finalResolutionDependencies = Array.from(resolutionDependencySet);
-    let finalVisualDependenciesArray = Array.from(visualDependencySet);
-
-    // Fallback: If the visual dependency set is empty after processing arguments,
-    // but resolution dependencies were identified (e.g., direct color references in a non-palette-aware function,
-    // or a palette-aware function called only with direct color references),
-    // then the visual dependencies should mirror the resolution dependencies.
-    // This ensures that direct dependencies are always visualized if present.
-    if (finalVisualDependenciesArray.length === 0 && finalResolutionDependencies.length > 0) {
-        finalVisualDependenciesArray = finalResolutionDependencies;
-    }
-    // If both dependency sets are empty (e.g., for a function like lighten('#fff', 0.1) with no key-based arguments),
-    // visualDependencies will correctly be an empty array.
+    const finalVisualDependenciesArray = Array.from(visualDependencySet);
 
     return new ColorFunction(implementation, args, finalResolutionDependencies, finalVisualDependenciesArray);
   }
