@@ -484,7 +484,16 @@ export class ColorRouter {
     if (value instanceof ColorReference) return `ref('${value.key}')`;
     if (value instanceof ColorFunction) {
       const fnName = [...this.#customFunctions.entries()].find(([_, fn]) => fn === value.fn)?.[0] || value.fn.name.replace('bound ', '');
-      const args = value.args.map(a => typeof a === 'string' ? `'${a}'` : a).join(', ');
+      const args = value.args.map(a => {
+        if (Array.isArray(a)) {
+          return `[${a.map(item => {
+            if (item === null) return 'null';
+            if (typeof item === 'string') return `'${item}'`;
+            return item;
+          }).join(', ')}]`;
+        }
+        return typeof a === 'string' ? `'${a}'` : a;
+      }).join(', ');
       return `${fnName}(${args})`;
     }
     return `'${value}'`;
@@ -569,7 +578,12 @@ export class ColorRouter {
     if (value instanceof ColorReference) return `ref('${value.key}')`;
     if (value instanceof ColorFunction) {
       const fnName = [...this.#customFunctions.entries()].find(([_, fn]) => fn === value.fn)?.[0] || value.fn.name.replace('bound ', '');
-      const args = value.args.map(a => typeof a === 'string' ? `'${a}'` : a).join(', ');
+      const args = value.args.map(a => {
+        if (Array.isArray(a)) {
+          return `[${a.map(item => typeof item === 'string' ? `'${item}'` : item).join(', ')}]`;
+        }
+        return typeof a === 'string' ? `'${a}'` : a;
+      }).join(', ');
       return `${fnName}(${args})`;
     }
     return value; // Return raw value without quotes for hex colors

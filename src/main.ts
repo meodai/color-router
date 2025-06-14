@@ -266,10 +266,10 @@ document.getElementById('define-color')?.addEventListener('click', () => {
   try {
     let value: any = valueInput.value.trim();
     const refMatch = value.match(/ref\(['"](.*?)['"]\)/);
-    const bestContrastMatch = value.match(/bestContrastWith\(['"](.*?)['"](?:,\s*['"](.*?)['"]\))?\)/);
-    const colorMixMatch = value.match(/colorMix\(['"](.*?)['"],\s*['"](.*?)['"](?:,\s*(['"]*[\d.%]+['"]*))?\s*(?:,\s*['"](.*?)['"]\))?\)/);
-    const relativeMatch = value.match(/relativeTo\(['"](.*?)['"],\s*['"](.*?)['"]\)/);
-    const minContrastMatch = value.match(/minContrastWith\(['"](.*?)['"](?:,\s*([\d.]+))?\)/);
+    const bestContrastMatch = value.match(/bestContrastWith\\(['\\"](.*?)['\\"](?:,\\s*['\\"](.*?)['\\"])?\\)/);
+    const colorMixMatch = value.match(/colorMix\\(['\\"](.*?)['\\"],\\s*['\\"](.*?)['\\"](?:,\\s*(['\\"]*[\\d.%]+['\\"]*))?\\s*(?:,\\s*['\\"](.*?)['\\"])?\\)/);
+    const relativeMatch = value.match(/relativeTo\\(\\s*['\\"](.*?)['\\"]\\s*,\\s*['\\"](.*?)['\\"]\\s*,\\s*(\\[.*?\\])\\s*\\)/);
+    const minContrastMatch = value.match(/minContrastWith\\(['\\"](.*?)['\\"](?:,\\s*([\\d.]+))?\\)/);
     const lightenMatch = value.match(/lighten\(['"](.*?)['"],\s*([\d.]+)\)/);
     const darkenMatch = value.match(/darken\(['"](.*?)['"],\s*([\d.]+)\)/);
     const funcMatch = value.match(/func\(['"](.*?)['"](?:,\s*(.*))?\)/);
@@ -296,7 +296,16 @@ document.getElementById('define-color')?.addEventListener('click', () => {
       
       value = router.func('colorMix', color1, color2, parseFloat(ratio), colorSpace);
     } else if (relativeMatch) {
-      value = router.func('relativeTo', relativeMatch[1], relativeMatch[2]);
+      const baseColor = relativeMatch[1];
+      const colorSpace = relativeMatch[2];
+      const modificationsString = relativeMatch[3];
+      try {
+        // Replace single quotes with double quotes for JSON compatibility, and ensure 'null' is a keyword
+        const parsedModifications = JSON.parse(modificationsString.replace(/'/g, '"'));
+        value = router.func('relativeTo', baseColor, colorSpace, parsedModifications);
+      } catch (e) {
+        throw new Error(`Invalid modifications array format for relativeTo: ${modificationsString}. ${ (e as Error).message }`);
+      }
     } else if (minContrastMatch) {
       const ratio = minContrastMatch[2] ? parseFloat(minContrastMatch[2]) : 1.5;
       value = router.func('minContrastWith', minContrastMatch[1], ratio);
@@ -432,7 +441,7 @@ function setupInitialState(): void {
   router.define('base.light', '#ffffff');
   router.define('base.dark', '#202126');
   router.define('base.accent', '#1a0dab');
-  router.define('base.attention', '#FF6347');
+  router.define('base.attention', router.func('relativeTo', 'base.accent', 'oklch', ['+.35', '.2', '+120']));
 
   // --- RAMP (was scale) palette (0-900) - systematic neutral ramp based on base.dark
   // Create this before demo palette since demo.contrast references it
