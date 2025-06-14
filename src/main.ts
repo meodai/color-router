@@ -177,24 +177,26 @@ function renderColorDemo(): void {
     }
     demoStyle.textContent = cssOutput;
 
-    // Create demo component using the simplified card palette
     container.innerHTML = `
-      <!-- Card Palette Demo -->
-      <div class="p-6 rounded-lg border shadow-sm mb-8" style="background-color: var(--card-background, #ffffff); border-color: var(--card-interaction, #0066cc); color: var(--card-onBackground, #0f172a);">
-        <h3 class="text-xl font-medium mb-3">Simplified Card Component</h3>
-        <p class="text-sm mb-4 opacity-75">This card uses only 4 essential colors: background, onBackground, interaction, and onInteraction.</p>
+      <!-- Surface Demo -->
+      <div class="p-6 rounded-lg border shadow-sm" style="background-color: var(--surface-background, #ffffff); border-color: var(--surface-line, #cccccc); color: var(--surface-onBackground, #0f172a);">
+        <h3 class="text-xl font-medium mb-3">Default Surface</h3>
+        <p class="text-sm mb-4 opacity-75">This is a standard surface using background, onBackground, interaction, onInteraction, and line colors.</p>
         <div class="flex flex-wrap gap-2 mb-4">
-          <button class="px-4 py-2 text-sm font-medium rounded transition-colors" style="background-color: var(--card-interaction, #0066cc); color: var(--card-onInteraction, #ffffff);">Primary Action</button>
-          <button class="px-3 py-2 text-sm font-medium rounded border transition-colors" style="border-color: var(--card-interaction, #0066cc); color: var(--card-interaction, #0066cc); background-color: transparent;">Secondary</button>
+          <button class="px-4 py-2 text-sm font-medium rounded transition-colors" style="background-color: var(--surface-interaction, #0066cc); color: var(--surface-onInteraction, #ffffff);">Primary Action</button>
+          <button class="px-3 py-2 text-sm font-medium rounded border transition-colors" style="border-color: var(--surface-interaction, #0066cc); color: var(--surface-interaction, #0066cc); background-color: transparent;">Secondary</button>
         </div>
         <div class="text-xs space-y-1 opacity-75">
-          <p><strong>Color System:</strong></p>
-          <p>• Background: <code>ref('scale.0')</code> → <code>var(--card-background)</code></p>
-          <p>• On Background: <code>bestContrastWith('card.background', 'scale')</code> → <code>var(--card-onBackground)</code></p>
-          <p>• Interaction: <code>ref('bold-colors.0')</code> → <code>var(--card-interaction)</code></p>
-          <p>• On Interaction: <code>bestContrastWith('bold-colors.0', 'scale')</code> → <code>var(--card-onInteraction)</code></p>
+          <p><strong>Color System (Default Surface):</strong></p>
+          <p>• Background: <code>var(--surface-background)</code></p>
+          <p>• On Background: <code>var(--surface-onBackground)</code></p>
+          <p>• Interaction: <code>var(--surface-interaction)</code></p>
+          <p>• On Interaction: <code>var(--surface-onInteraction)</code></p>
+          <p>• Line: <code>var(--surface-line)</code></p>
         </div>
       </div>
+
+     
     `;
   } catch (e) {
     container.innerHTML = `<p class="text-red-500 text-sm">Error rendering demo: ${(e as Error).message}</p>`;
@@ -469,17 +471,13 @@ function setupInitialState(): void {
   // Now that scale palette is created, add the furthest function demo
   router.define('demo.furthest', router.func('furthestFrom', 'base'));
 
-  // Card palette - reference scale keys directly, do not extend
-  router.createPalette('card');
-  router.define('card.background', router.ref('ramp.0'));
-  router.define('card.onBackground', router.func('bestContrastWith', 'card.background', 'ramp'));
-  router.define('card.interaction', router.func('bestContrastWith', 'card.background', 'scale'));
-  
-
-  router.define('card.onInteraction', router.func('bestContrastWith', 'card.interaction', 'ramp'));
-  
-  router.define('card.warning', router.func('closestColor', 'red', 'scale', 0));
-  router.define('card.onWarning', router.func('bestContrastWith', 'card.warning', 'ramp'));
+  // --- SURFACE PALETTE (replaces Card) ---
+  router.createPalette('surface');
+  router.define('surface.background', router.ref('ramp.0')); // e.g., white
+  router.define('surface.onBackground', router.func('bestContrastWith', 'surface.background', 'ramp'));
+  router.define('surface.interaction', router.ref('base.accent')); // Primary accent
+  router.define('surface.onInteraction', router.func('bestContrastWith', 'surface.interaction', 'ramp'));
+  router.define('surface.line', router.func('minContrastWith', 'surface.background', 'ramp', 1.7)); // Subtle border
 
   router.flush();
   
@@ -494,7 +492,7 @@ function setupInitialState(): void {
   logEvent("• BASE: Foundation colors (light, dark, accent, attention)");
   logEvent("• DEMO: Function demonstration (colorMix, lighten, darken, bestContrastWith, relativeTo, minContrastWith, furthestFrom)");
   logEvent("• SCALE: Systematic neutral scale - 900=base.dark, others lighten progressively");
-  logEvent("• CARD: Essential theming (background/onBackground, interaction/onInteraction, warning/onWarning)");
+  logEvent("• SURFACE: Default UI surface colors (background, text, interaction, lines)");
   logEvent("Try changing base.dark to see entire scale update automatically!");
   
   renderPalettes();
@@ -520,11 +518,11 @@ function logRendererComparison(): void {
   // Also log some specific variables for debugging
   const cssRenderer = router.createRenderer('css-variables');
   const cssOutput = cssRenderer.render();
-  const cardOnInteractionMatch = cssOutput.match(/--card-onInteraction:\s*([^;]+);/);
-  if (cardOnInteractionMatch) {
-    logEvent(`🎯 CARD TEXT COLOR: --card-onInteraction: ${cardOnInteractionMatch[1]}`);
+  const surfaceOnInteractionMatch = cssOutput.match(/--surface-onInteraction:\s*([^;]+);/);
+  if (surfaceOnInteractionMatch) {
+    logEvent(`🎯 SURFACE TEXT COLOR: --surface-onInteraction: ${surfaceOnInteractionMatch[1]}`);
   } else {
-    logEvent(`⚠️  --card-onInteraction not found in CSS output`);
+    logEvent(`⚠️  --surface-onInteraction not found in CSS output`);
   }
 }
 
