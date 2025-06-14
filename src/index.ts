@@ -1,5 +1,7 @@
 // Library entry point for NPM package
-export { ColorRouter, ColorReference, ColorFunction, PaletteError, CircularDependencyError } from './ColorRouter';
+export { ColorRouter } from './ColorRouter'; // ColorReference, ColorFunction, PaletteError, CircularDependencyError moved
+export { ColorReference, ColorFunction } from './types'; // Export from types.ts
+export { PaletteError, CircularDependencyError } from './errors'; // Export from errors.ts
 export { ColorRenderer } from './ColorRenderer';
 export { SVGRenderer } from './SVGRenderer';
 export { tableView, createTableItemFromPalette } from './TableViewRenderer';
@@ -10,8 +12,8 @@ export type {
   ColorDefinition, 
   PaletteConfig, 
   ColorChangeEvent,
-  ColorRendererClass
-} from './ColorRouter';
+  ColorRendererClass // Import from types.ts
+} from './types'; // Changed from ./ColorRouter to ./types
 export type {
   RenderFormat,
   FunctionRenderer

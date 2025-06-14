@@ -1,4 +1,5 @@
-import { ColorRouter, ColorReference, ColorFunction, ColorDefinition } from './ColorRouter';
+import { ColorRouter } from './ColorRouter';
+import { ColorReference, ColorFunction, ColorDefinition } from './types'; // Import from types.ts
 import { 
   bestContrastWithRenderers,
   colorMixRenderers,

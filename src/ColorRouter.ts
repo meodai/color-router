@@ -1,93 +1,53 @@
 import { formatHex, parse } from 'culori';
-import { 
-  bestContrastWith, 
-  colorMix, 
-  relativeTo, 
-  minContrastWith, 
-  lighten, 
+import {
+  bestContrastWith,
+  colorMix,
+  relativeTo,
+  minContrastWith,
+  lighten,
   darken,
   furthestFrom,
-  closestColor // Add closestColor here
+  closestColor
 } from './colorFunctions';
+import {
+  PaletteConfig,
+  ColorChangeEvent,
+  ColorReference,
+  ColorFunction,
+  ColorDefinition,
+  LogCallback,
+  ColorRendererClass
+} from './types';
+import { PaletteError, CircularDependencyError } from './errors';
+import { DependencyGraph } from './DependencyGraph';
+import { PaletteManager } from './PaletteManager'; // Import PaletteManager
 
 // --- TYPE DEFINITIONS ---
-
-export type ColorValue = string;
-export type PaletteName = string;
-export type ColorKey = string;
-
-export interface PaletteConfig {
-  extends?: string;
-  overrides?: Record<string, any>;
-}
-
-export interface ColorChangeEvent {
-  key: string;
-  oldValue: string | undefined;
-  newValue: string;
-}
-
-export class ColorReference {
-  readonly type = Symbol.for('ColorReference');
-  
-  constructor(public readonly key: string) {}
-}
-
-export class ColorFunction {
-  readonly type = Symbol.for('ColorFunction');
-  
-  constructor(
-    public readonly fn: (...args: any[]) => string,
-    public readonly args: any[],
-    public readonly dependencies: string[], // For resolution logic
-    public readonly visualDependencies: string[] // For visualization. Guaranteed to be populated by func.
-  ) {}
-  
-  execute(resolver: ColorRouter): string {
-    const resolvedArgs = this.args.map(arg => 
-      typeof arg === 'string' && resolver.has(arg) ? resolver.resolve(arg) : arg
-    );
-    // Ensure the function is called with the ColorRouter instance as its `this` context
-    return this.fn.call(resolver, ...resolvedArgs);
-  }
-}
-
-export class PaletteError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'PaletteError';
-  }
-}
-
-export class CircularDependencyError extends Error {
-  constructor(public readonly path: string[]) {
-    super(`Circular dependency detected: ${path.join(' -> ')}`);
-    this.name = 'CircularDependencyError';
-  }
-}
-
-export type ColorDefinition = ColorValue | ColorReference | ColorFunction;
-export type LogCallback = (message: string) => void;
-export type ColorRendererClass = new (router: ColorRouter, format?: 'css-variables' | 'scss' | 'json') => any;
+// All type definitions and simple classes (ColorReference, ColorFunction) moved to types.ts
+// Custom error classes (PaletteError, CircularDependencyError) moved to errors.ts
 
 export class ColorRouter {
-  readonly #palettes = new Map<string, PaletteConfig>();
+  // readonly #palettes = new Map<string, PaletteConfig>(); // Replaced by PaletteManager
+  readonly #paletteManager: PaletteManager; // Add PaletteManager instance
   readonly #definitions = new Map<string, ColorDefinition>();
   readonly #resolved = new Map<string, string>();
-  readonly #dependencies = new Map<string, Set<string>>();
-  readonly #dependents = new Map<string, Set<string>>();
+  readonly #dependencyGraph: DependencyGraph; 
   #mode: 'auto' | 'batch' = 'auto';
   readonly #batchQueue = new Set<string>();
   readonly #eventEmitter = new EventTarget();
   readonly #customFunctions = new Map<string, (...args: any[]) => string>();
-  readonly #paletteAwareFunctions = new Set<string>(); // New: For palette-aware functions
+  readonly #paletteAwareFunctions = new Set<string>();
   
   #ColorRenderer?: ColorRendererClass;
   #logCallback?: LogCallback;
 
   constructor(options: { mode?: 'auto' | 'batch' } = {}) {
     this.#mode = options.mode || 'auto';
-    this.#registerBuiltinFunctions(); // Ensure this is called
+    this.#logCallback = undefined;
+    // Pass this.#definitions and 'this' (ColorRouter instance) to PaletteManager
+    this.#paletteManager = new PaletteManager(this.#definitions, this, this.#logCallback);
+    this.#dependencyGraph = new DependencyGraph(this.#logCallback);
+    this.#registerBuiltinFunctions();
   }
 
   #registerBuiltinFunctions(): void {
@@ -117,7 +77,7 @@ export class ColorRouter {
 
   func(name: string, ...args: any[]): ColorFunction {
     if (!this.#customFunctions.has(name)) {
-      throw new PaletteError(`Custom function \\"${name}\\" is not registered.`);
+      throw new PaletteError(`Custom function \"${name}\" is not registered.`);
     }
     const implementation = this.#customFunctions.get(name)!;
     
@@ -134,17 +94,14 @@ export class ColorRouter {
     
     if (this.#paletteAwareFunctions.has(name)) {
       for (const arg of args) {
-        if (typeof arg === 'string' && !arg.includes('.') && this.#palettes.has(arg)) { // arg is a palette name
-          // For resolution, add all individual keys from the palette
-          const paletteKeys = this.getAllKeysForPalette(arg);
+        // Use paletteManager to check if arg is a palette name
+        if (typeof arg === 'string' && !arg.includes('.') && this.#paletteManager.hasPalette(arg)) {
+          const paletteKeys = this.#paletteManager.getAllKeysForPalette(arg); // Use paletteManager
           for (const pKey of paletteKeys) {
             resolutionDependencySet.add(pKey);
           }
-          // For visual, add the summarized palette dependency
           visualDependencySet.add(`palette:${arg}`); 
         }
-        // Other argument types (literals like numbers, hex colors, or non-palette string names)
-        // or already handled direct color keys do not add further dependencies here.
       }
     }
     // If not palette-aware, visualDependencySet currently only contains direct color refs from the initial loop.
@@ -156,70 +113,36 @@ export class ColorRouter {
     return new ColorFunction(implementation, args, finalResolutionDependencies, finalVisualDependenciesArray);
   }
 
-  // --- PALETTE MANAGEMENT ---
+  // --- PALETTE MANAGEMENT --- (Delegated to PaletteManager)
   createPalette(name: string, options: { extends?: string; overrides?: Record<string, any> } = {}): void {
-    const { extends: basePalette, overrides = {} } = options;
-    if (this.#palettes.has(name)) throw new PaletteError(`Palette "${name}" already exists.`);
-    if (basePalette && !this.#palettes.has(basePalette)) {
-      throw new PaletteError(`Base palette "${basePalette}" does not exist.`);
-    }
-    this.#palettes.set(name, { extends: basePalette, overrides });
-    if (this.#logCallback) {
-      this.#logCallback(`Palette '${name}' created${basePalette ? ` extending '${basePalette}'` : ''}.`);
-    }
-    
-    // Apply overrides if provided
-    if (basePalette && Object.keys(overrides).length > 0) {
-      for (const [key, value] of Object.entries(overrides)) { 
-        this.define(`${name}.${key}`, value); 
-      }
-    }
+    this.#paletteManager.createPalette(name, options);
   }
 
   extendPalette(name: string, basePalette: string, overrides: Record<string, any> = {}): void {
-    return this.createPalette(name, { extends: basePalette, overrides });
+    this.#paletteManager.extendPalette(name, basePalette, overrides);
   }
 
   copyPalette(sourceName: string, targetName: string): void {
-    if (!this.#palettes.has(sourceName)) {
-      throw new PaletteError(`Source palette "${sourceName}" does not exist.`);
-    }
-    if (this.#palettes.has(targetName)) {
-      throw new PaletteError(`Target palette "${targetName}" already exists.`);
-    }
-    
-    const sourceKeys = this.getAllKeysForPalette(sourceName);
-    this.createPalette(targetName);
-    
-    for (const key of sourceKeys) {
-      const shortKey = key.split('.').slice(1).join('.');
-      const definition = this.getDefinitionForKey(key);
-      this.define(`${targetName}.${shortKey}`, definition);
-    }
-    if (this.#logCallback) this.#logCallback(`Copied palette '${sourceName}' to '${targetName}'.`);
+    this.#paletteManager.copyPalette(sourceName, targetName);
   }
 
   deletePalette(name: string): void {
-    if (!this.#palettes.has(name)) throw new PaletteError(`Palette "${name}" does not exist.`);
-    
-    // Remove all colors in this palette
-    const keysToDelete = this.getAllKeysForPalette(name);
+    // PaletteManager.deletePalette now returns keys that were part of the palette
+    const keysToDelete = this.#paletteManager.deletePalette(name);
     for (const key of keysToDelete) {
       this.#definitions.delete(key);
       this.#resolved.delete(key);
-      this.#dependencies.delete(key);
-      this.#dependents.delete(key);
+      this.#dependencyGraph.removeNode(key);
     }
-    
-    this.#palettes.delete(name);
-    if (this.#logCallback) this.#logCallback(`Deleted palette '${name}'.`);
+    // Logging is handled by PaletteManager
   }
 
   // --- COLOR DEFINITION & MODIFICATION ---
   define(key: string, value: ColorDefinition): void {
-    const [palette] = key.split('.');
-    if (!this.#palettes.has(palette)) {
-      throw new PaletteError(`Palette "${palette}" does not exist. Create it first.`);
+    const [paletteName] = key.split('.');
+    // Use paletteManager to check if palette exists
+    if (!this.#paletteManager.hasPalette(paletteName)) {
+      throw new PaletteError(`Palette "${paletteName}" does not exist. Create it first.`);
     }
     this.#set(key, value);
   }
@@ -234,7 +157,7 @@ export class ColorRouter {
       throw new PaletteError(`Invalid color value: "${value}". Must be a valid CSS color or a router function.`);
     }
     this.#definitions.set(key, value);
-    this.#updateDependencies(key, value);
+    this.#dependencyGraph.updateEdges(key, value);
     if (this.#mode === 'auto') {
       this.#resolveAndNotify(key);
     } else {
@@ -253,9 +176,8 @@ export class ColorRouter {
 
     let sortedKeys: string[];
     try {
-      sortedKeys = this.#topologicalSort(keysToProcess);
+      sortedKeys = this.#dependencyGraph.topologicalSort(keysToProcess);
     } catch (e) {
-      // This catch is for errors thrown directly by #topologicalSort if it doesn't handle them internally.
       if (this.#logCallback) {
         this.#logCallback(`Error during topological sort in flush: ${(e as Error).message}. Batch processing aborted for ${keysToProcess.length} keys.`);
       }
@@ -331,7 +253,19 @@ export class ColorRouter {
 
   // --- RESOLUTION & REACTIVITY ---
   #resolveAndNotify(startKey: string): void {
-    const toUpdate = this.#getUpdateOrder(startKey);
+    let toUpdate: string[];
+    try {
+      toUpdate = this.#dependencyGraph.getEvaluationOrderFor(startKey);
+    } catch (e) {
+      if (this.#logCallback) {
+        this.#logCallback(`Error getting update order for '${startKey}': ${(e as Error).message}`);
+      }
+      // If we can't get an update order, we probably can't proceed safely for auto-updates.
+      // This might happen if a circular dependency is introduced.
+      // Re-throw or handle as a critical error for auto-mode.
+      throw e;
+    }
+
     const changes: ColorChangeEvent[] = [];
     for (const key of toUpdate) {
       const oldValue = this.#resolved.get(key);
@@ -364,7 +298,7 @@ export class ColorRouter {
   
   #getDefinition(key: string): ColorDefinition {
     let [paletteName, colorName] = key.split('.');
-    const visitedPalettes = new Set<string>(); // Track visited palettes to prevent infinite loops
+    const visitedPalettes = new Set<string>();
     
     while (paletteName) {
       // Check for circular palette inheritance
@@ -375,7 +309,9 @@ export class ColorRouter {
       
       const currentKey = `${paletteName}.${colorName}`;
       if (this.#definitions.has(currentKey)) return this.#definitions.get(currentKey)!;
-      const paletteConfig = this.#palettes.get(paletteName);
+      
+      // Use paletteManager to get palette config for extends
+      const paletteConfig = this.#paletteManager.getPalette(paletteName);
       if (!paletteConfig || !paletteConfig.extends) break;
       paletteName = paletteConfig.extends;
     }
@@ -409,125 +345,16 @@ export class ColorRouter {
     return resolvedValue;
   }
 
-  #getAllPaletteKeys(paletteName: string): string[] {
-    const keys = new Set<string>();
-    let current: string | undefined = paletteName;
-    const paletteStack: string[] = [];
-    const visitedPalettes = new Set<string>(); // Prevent infinite loops
-    
-    while (current && !visitedPalettes.has(current)) {
-      visitedPalettes.add(current);
-      paletteStack.unshift(current);
-      const palette = this.#palettes.get(current);
-      current = palette?.extends;
-    }
-    
-    // If we hit a visited palette, throw an error
-    if (current && visitedPalettes.has(current)) {
-      throw new CircularDependencyError([...visitedPalettes, current]);
-    }
-    
-    for (const pName of paletteStack) {
-      const prefix = `${pName}.`;
-      for (const key of this.#definitions.keys()) {
-        if (key.startsWith(prefix)) {
-          keys.add(key.split('.').slice(1).join('.'));
-        }
-      }
-    }
-    return Array.from(keys).map(k => `${paletteName}.${k}`);
+  // #getAllPaletteKeys moved to PaletteManager, ColorRouter will use paletteManager.getAllKeysForPalette
+  // public getAllKeysForPalette is now a direct call to paletteManager
+  getAllKeysForPalette(paletteName: string): string[] {
+    return this.#paletteManager.getAllKeysForPalette(paletteName);
   }
-
-  // --- DEPENDENCY GRAPH ---
-  #updateDependencies(key: string, value: ColorDefinition): void {
-    if (this.#dependents.has(key)) {
-      for (const dep of this.#dependents.get(key)!) { 
-        this.#dependencies.get(dep)?.delete(key); 
-      }
-    }
-    this.#dependents.set(key, new Set());
-    const deps = this.#getDepsFromValue(value);
-    for (const dep of deps) {
-      if (!this.#dependencies.has(dep)) this.#dependencies.set(dep, new Set());
-      this.#dependencies.get(dep)!.add(key);
-      this.#dependents.get(key)!.add(dep);
-    }
-  }
-
-  #getDepsFromValue(value: ColorDefinition): string[] {
-    if (value instanceof ColorReference) return [value.key];
-    if (value instanceof ColorFunction) return value.dependencies;
-    return [];
-  }
-
-  #getUpdateOrder(startKey: string): string[] {
-    const visited = new Set<string>();
-    const order: string[] = [];
-    const routerInstance = this;
-    
-    function visit(key: string): void {
-      if (visited.has(key)) return;
-      visited.add(key);
-      (routerInstance.#dependencies.get(key) || []).forEach(visit);
-      order.push(key);
-    }
-    visit(startKey);
-    return order.reverse();
-  }
-
-  #topologicalSort(keys: string[]): string[] {
-    const sorted: string[] = [];
-    const visited = new Set<string>();
-    const temp = new Set<string>();
-    const routerInstance = this;
-    
-    const visit = (key: string): void => {
-      if (visited.has(key)) return;
-      if (temp.has(key)) throw new CircularDependencyError([...temp, key]);
-      temp.add(key);
-      
-      const dependents = routerInstance.#dependents.get(key);
-      if (dependents) {
-        for (const dep of dependents) {
-          if (keys.includes(dep)) {
-            visit(dep);
-          }
-        }
-      }
-      
-      temp.delete(key);
-      visited.add(key);
-      sorted.push(key);
-    };
-    
-    for (const key of keys) { 
-      if (!visited.has(key)) {
-        try {
-          visit(key);
-        } catch (e) {
-          if (e instanceof CircularDependencyError) {
-            // Log the circular dependency but continue with other keys
-            if (this.#logCallback) {
-              this.#logCallback(`Circular dependency detected for '${key}': ${e.message}`);
-            }
-            // Add the key anyway to prevent infinite loops
-            if (!visited.has(key)) {
-              visited.add(key);
-              sorted.push(key);
-            }
-          } else {
-            throw e; // Re-throw non-circular dependency errors
-          }
-        }
-      }
-    }
-    return sorted;
-  }
-
+ 
   // --- UTILITY & HELPER FUNCTIONS ---
   has(key: string): boolean {
     let [pName, cName] = key.split('.');
-    const visitedPalettes = new Set<string>(); // Prevent infinite loops
+    const visitedPalettes = new Set<string>();
     
     while (pName) {
       // Check for circular palette inheritance
@@ -537,7 +364,8 @@ export class ColorRouter {
       visitedPalettes.add(pName);
       
       if (this.#definitions.has(`${pName}.${cName}`)) return true;
-      const pConfig = this.#palettes.get(pName);
+      // Use paletteManager to get palette config for extends
+      const pConfig = this.#paletteManager.getPalette(pName);
       if (!pConfig || !pConfig.extends) break;
       pName = pConfig.extends;
     }
@@ -592,7 +420,8 @@ export class ColorRouter {
 
   // --- PUBLIC GETTERS FOR UI ---
   getAllPalettes = (): Array<{ name: string; config: PaletteConfig }> => {
-    return Array.from(this.#palettes.entries()).map(([name, config]) => ({ name, config }));
+    // Delegate to PaletteManager
+    return this.#paletteManager.getAllPalettes();
   }
 
   public getDefinitionType(key: string): 'function' | 'reference' | 'value' {
@@ -629,10 +458,6 @@ export class ColorRouter {
     return new Set<string>();
   }
 
-  getAllKeysForPalette(paletteName: string): string[] { // Ensure this is public or accessible if not already
-    return this.#getAllPaletteKeys(paletteName);
-  }
-
   valueToString(value: ColorDefinition): string {
     return this.#valueToString(value);
   }
@@ -667,19 +492,22 @@ export class ColorRouter {
 
   // --- DEPENDENCY ANALYSIS ---
   getDependencies(key: string): string[] {
-    return Array.from(this.#dependents.get(key) || []);
+    // return Array.from(this.#dependents.get(key) || []); // Replaced
+    return this.#dependencyGraph.getPrerequisitesFor(key);
   }
 
   getDependents(key: string): string[] {
-    return Array.from(this.#dependencies.get(key) || []);
+    // return Array.from(this.#dependencies.get(key) || []); // Replaced
+    return this.#dependencyGraph.getDependentsOf(key);
   }
 
   getConnectionGraph(): Record<string, string[]> {
-    const graph: Record<string, string[]> = {};
-    for (const [key, deps] of this.#dependents.entries()) {
-      graph[key] = Array.from(deps);
-    }
-    return graph;
+    // const graph: Record<string, string[]> = {};
+    // for (const [key, deps] of this.#dependents.entries()) {
+    //   graph[key] = Array.from(deps);
+    // }
+    // return graph; // Replaced
+    return this.#dependencyGraph.getConnectionGraph();
   }
 
   // --- RENDERER INTEGRATION METHODS ---
@@ -697,11 +525,11 @@ export class ColorRouter {
   }
 
   getPaletteDependencies(paletteName: string): string[] {
-    const keys = this.getAllKeysForPalette(paletteName);
+    const keys = this.#paletteManager.getAllKeysForPalette(paletteName); // Use PaletteManager
     const externalDeps = new Set<string>();
     
     for (const key of keys) {
-      const deps = this.getDependencies(key);
+      const deps = this.getDependencies(key); // This uses DependencyGraph
       for (const dep of deps) {
         if (!dep.startsWith(`${paletteName}.`)) {
           externalDeps.add(dep);
@@ -713,12 +541,12 @@ export class ColorRouter {
   }
 
   resolvePalette(paletteName: string): Record<string, string> {
-    const keys = this.getAllKeysForPalette(paletteName);
+    const keys = this.#paletteManager.getAllKeysForPalette(paletteName); // Use PaletteManager
     const resolved: Record<string, string> = {};
     
     for (const key of keys) {
       const shortKey = key.split('.').slice(1).join('.');
-      resolved[shortKey] = this.resolve(key);
+      resolved[shortKey] = this.resolve(key); // resolve is still a ColorRouter method
     }
     
     return resolved;
@@ -741,5 +569,7 @@ export class ColorRouter {
   // Method to set logging callback for UI integration
   setLogCallback(callback: LogCallback): void {
     this.#logCallback = callback;
+    this.#dependencyGraph.setLogCallback(callback);
+    this.#paletteManager.setLogCallback(callback); // Pass to PaletteManager as well
   }
 }
