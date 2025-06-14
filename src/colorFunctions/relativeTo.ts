@@ -148,7 +148,7 @@ export const relativeToRenderers: Record<string, FunctionRenderer> = {
     return `color(from ${baseColor} ${colorSpace} ${channels.join(' ')}${alphaStr})`;
   },
   
-  'scss': (args: any[]): string => {
+  'scss': (_args: any[]): string => {
     // SCSS doesn't have native relative color syntax, so we compute the value
     return '';
   },

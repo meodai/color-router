@@ -245,23 +245,88 @@ export class ColorRouter {
   
   flush(): void {
     if (this.#mode !== 'batch') return;
-    const sorted = this.#topologicalSort(Array.from(this.#batchQueue));
+
+    const keysToProcess = Array.from(this.#batchQueue);
+    // Clear the queue at the beginning to prevent reprocessing if flush itself errors out mid-way
+    // or if some keys are processed and others fail.
+    this.#batchQueue.clear();
+
+    let sortedKeys: string[];
+    try {
+      sortedKeys = this.#topologicalSort(keysToProcess);
+    } catch (e) {
+      // This catch is for errors thrown directly by #topologicalSort if it doesn't handle them internally.
+      if (this.#logCallback) {
+        this.#logCallback(`Error during topological sort in flush: ${(e as Error).message}. Batch processing aborted for ${keysToProcess.length} keys.`);
+      }
+      this.#eventEmitter.dispatchEvent(new CustomEvent('batch-failed', {
+        detail: {
+          error: e,
+          stage: 'sorting',
+          processedKeys: [],
+          errors: [{ keys: keysToProcess, error: e instanceof Error ? e : new Error(String(e)) }],
+          summary: `Batch processing failed during sorting for ${keysToProcess.length} keys.`
+        }
+      }));
+      return;
+    }
+
     const allChanges: ColorChangeEvent[] = [];
-    for (const key of sorted) {
+    const processingErrors: { key: string, error: Error }[] = [];
+
+    for (const key of sortedKeys) {
       const oldValue = this.#resolved.get(key);
-      this.#resolveKey(key);
-      const newValue = this.#resolved.get(key);
-      if (oldValue !== newValue) {
-        allChanges.push({ key, oldValue, newValue: newValue! });
-        this.#emit(key, newValue!, oldValue);
+      try {
+        // #resolveKey will throw if an error occurs, as per previous changes to resolve().
+        this.#resolveKey(key);
+        const newValue = this.#resolved.get(key);
+
+        if (newValue === undefined) {
+          // This should ideally not happen if #resolveKey succeeds without throwing, as it sets the value.
+          // However, as a safeguard:
+          throw new PaletteError(`Internal error: Value for '${key}' not found in resolved cache after successful resolution attempt in flush, but no explicit error was thrown by #resolveKey.`);
+        }
+
+        if (oldValue !== newValue) {
+          allChanges.push({ key, oldValue, newValue });
+          this.#emit(key, newValue, oldValue); // Emit individual watch events
+        }
+      } catch (e) {
+        const error = e instanceof Error ? e : new Error(String(e));
+        if (this.#logCallback) {
+          this.#logCallback(`Error resolving key '${key}' during flush: ${error.message}`);
+        }
+        processingErrors.push({ key, error });
+        // Continue processing other keys in the batch
       }
     }
+
+    // Determine the overall status and prepare event details
+    const successCount = allChanges.length;
+    const errorCount = processingErrors.length;
+    const processedCount = sortedKeys.length; // Number of keys attempted from sorted list
+
+    const summary = `Flush processed ${processedCount} keys. ${successCount} colors updated, ${errorCount} errors.`;
+
+    if (this.#logCallback) {
+      this.#logCallback(summary);
+    }
+
+    // Emit a general 'change' event only if there were successful changes
     if (allChanges.length > 0) {
       this.#eventEmitter.dispatchEvent(new CustomEvent('change', { detail: allChanges }));
-      this.#eventEmitter.dispatchEvent(new CustomEvent('batch-complete', { detail: allChanges }));
-      if (this.#logCallback) this.#logCallback(`Flush complete. ${allChanges.length} colors updated.`);
     }
-    this.#batchQueue.clear();
+
+    // Emit batch-complete with detailed information
+    this.#eventEmitter.dispatchEvent(new CustomEvent('batch-complete', {
+      detail: {
+        changes: allChanges,
+        errors: processingErrors,
+        processedKeys: sortedKeys,
+        summary: summary
+      }
+    }));
+    // Note: #batchQueue was cleared at the start of the method.
   }
 
   // --- RESOLUTION & REACTIVITY ---
