@@ -6,8 +6,6 @@ A reactive TypeScript color routing system that supports nested color definition
 
 The main class is `ColorRouter` which manages multiple palettes (namespaces) and their relationships, delegating palette state to `PaletteManager` and dependency tracking to `DependencyGraph`. Renderers like `ColorRenderer` are instantiated separately to process and output color data.
 
-> **Note**: This specification has been updated to reflect the current implementation as of June 2025.
-
 ## Core Features
 
 ### Nested Color Palettes
@@ -155,17 +153,40 @@ routerBatch.flush(); // now everything recalculates in optimal order
 `ColorRouter` uses an `EventTarget` to dispatch change events.
 
 ```typescript
-// Listen for changes (fired after successful definitions or flush)
+// Listen for general changes (fired after successful definitions in 'auto' mode or for each successful change in 'batch' mode's flush)
 router.addEventListener('change', (event) => {
   const customEvent = event as CustomEvent<ColorChangeEvent[]>;
   const changes = customEvent.detail;
-  // changes = [{ key: 'brand.primary', oldValue: '#000', newValue: '#fff', status: 'success' }]
-  // In batch mode, this contains all successful changes after a flush.
-  // It can also contain { key: 'some.key', error: ErrorObject, status: 'error' } for failed updates in a batch.
+  // changes = [{ key: 'brand.primary', oldValue: '#000', newValue: '#fff' }, ...]
 });
 
-// Note: A specific 'watch(key, callback)' or 'batch-complete' event is not directly implemented.
-// The 'change' event serves for both individual updates (auto mode) and batch completion (batch mode).
+// Listen for batch processing completion (fired after flush() in 'batch' mode)
+router.addEventListener('batch-complete', (event) => {
+  const customEvent = event as CustomEvent<{
+    changes: ColorChangeEvent[]; // Successful changes
+    errors: { key: string; error: Error }[]; // Errors encountered for specific keys
+    processedKeys: string[]; // All keys that were attempted in the batch
+    summary: string; // A summary message of the batch operation
+  }>;
+  console.log('Batch complete:', customEvent.detail.summary, customEvent.detail.changes, customEvent.detail.errors);
+});
+
+// Listen for batch processing failure (e.g., if sorting fails due to circular dependency)
+router.addEventListener('batch-failed', (event) => {
+  const customEvent = event as CustomEvent<{
+    error: Error;
+    stage: 'sorting'; // Indicates failure occurred during the sorting stage
+    processedKeys: string[]; // Keys that were intended for processing
+    errors: { keys: string[]; error: Error }[]; // The error that occurred
+    summary: string;
+  }>;
+  console.error('Batch failed:', customEvent.detail.summary, customEvent.detail.error);
+});
+
+// Watch specific keys
+router.watch('brand.primary', (newValue, oldValue) => {
+  console.log(`brand.primary changed from ${oldValue} to ${newValue}`);
+});
 ```
 
 ### Circular Dependency Detection
@@ -315,244 +336,252 @@ This is handled by the `ColorRenderer`'s internal logic for each format.
 router.define('accent',
   router.func('colorMix', 'brand.primary', '#f00', 0.6, 'oklch')
 )
-
-// CSS Modern renderer output (via ColorRenderer with 'css-variables' format):
-// --accent: color-mix(in oklch, var(--brand-primary) 40%, #f00);
-
-// SCSS renderer output (via ColorRenderer with 'scss' format):
-// $accent: mix($brand-primary, #f00, 60%);
-
-// JSON/JavaScript renderer output (via ColorRenderer with 'json' format):
-// "accent": "#cc3366" // pre-computed
-```
-
-### Custom Renderers
-
-One could create new classes similar to `ColorRenderer` to support other output formats by consuming data from `ColorRouter`.
-
-## API Reference
-
-### Core Methods (`ColorRouter`)
-
-```typescript
-// Definition
-router.define(key: string, value: ColorDefinition): void
-
 // Modification
 router.set(key: string, value: ColorDefinition): void // Alias for define
 
+// CSS Modern renderer output (via ColorRenderer with 'css-variables' format):
+// --accent: color-mix(in oklch, var(--brand-primary) 40%, #f00);router.resolve(key: string): string // final computed color
+
+// SCSS renderer output (via ColorRenderer with 'scss' format):
+// $accent: mix($brand-primary, #f00, 60%);router.ref(key: string): ColorReference
+..args: any[]): ColorFunction // Generic function creation
+// JSON/JavaScript renderer output (via ColorRenderer with 'json' format):n: (...args: any[]) => string, options?: { isPaletteAware?: boolean }): void
+// "accent": "#cc3366" // pre-computed
+```
+// router.func('bestContrastWith', targetColorKey: string, paletteNameOrFallbackArray: string | string[], fallbackColor?: string)
+### Custom Renderersr2Key: string, ratio?: number, colorSpace?: string)
+
+One could create new classes similar to `ColorRenderer` to support other output formats by consuming data from `ColorRouter`.kColor?: string)
+
+## API Reference
+
+### Core Methods (`ColorRouter`)etteNameOrColorArray: string | string[])
+
+```typescript
+// Definition// Batch Operations (batch mode only)
+router.define(key: string, value: ColorDefinition): voidrouter.flush(): { key: string; status: 'success' | 'error'; value?: string; error?: Error }[]
+
+// Modification
+router.set(key: string, value: ColorDefinition): void // Alias for definerouter.addEventListener(event: 'change', callback: (event: CustomEvent<ColorChangeEvent[]>) => void): void
+moveEventListener(event: 'change', callback: (event: CustomEvent<ColorChangeEvent[]>) => void): void
 // Resolution
 router.resolve(key: string): string // final computed color
-
-// References and Functions
-router.ref(key: string): ColorReference
+// Palette Management (delegated to PaletteManager)
+// References and Functionsrouter.createPalette(name: string, options?: { extends?: string; overrides?: Record<string, any> }): void
+router.ref(key: string): ColorReferenceing, overrides?: Record<string, any>): void // shortcut for createPalette with extends
 router.func(name: string, ...args: any[]): ColorFunction // Generic function creation
 router.registerFunction(name: string, fn: (...args: any[]) => string, options?: { isPaletteAware?: boolean }): void
-
+nfig }>
 // Built-in Functions (accessed via router.func())
 // router.func('bestContrastWith', targetColorKey: string, paletteNameOrFallbackArray: string | string[], fallbackColor?: string)
 // router.func('colorMix', color1Key: string, color2Key: string, ratio?: number, colorSpace?: string)
-// router.func('relativeTo', baseColorKey: string, transform: string)
-// router.func('minContrastWith', targetColorKey: string, minRatioOrPalette: number | string, fallbackColor?: string)
+// router.func('relativeTo', baseColorKey: string, transform: string)router.getAllKeysForPalette(paletteName: string): string[] // Gets all keys fully qualified for a palette, considering inheritance
+// router.func('minContrastWith', targetColorKey: string, minRatioOrPalette: number | string, fallbackColor?: string)y: string): ColorDefinition | undefined
 // router.func('lighten', colorKey: string, amount: number)
 // router.func('darken', colorKey: string, amount: number)
 // router.func('furthestFrom', paletteName: string)
-// router.func('closestColor', targetColorKey: string, paletteNameOrColorArray: string | string[])
-
-
-// Batch Operations (batch mode only)
-router.flush(): { key: string; status: 'success' | 'error'; value?: string; error?: Error }[]
+// router.func('closestColor', targetColorKey: string, paletteNameOrColorArray: string | string[])l dependencies for a key
+// Examples of using router.func():
+// router.func('bestContrastWith', 'some.color', 'paletteName')
+// router.func('bestContrastWith', 'some.color', ['#fff', '#000'])router.getDependencyGraph(): DependencyGraph // Returns the DependencyGraph instance
+// router.func('minContrastWith', 'some.color', 4.5) // 4.5 is the ratio
+// router.func('minContrastWith', 'some.color', 'paletteName')
+router.mode: 'auto' | 'batch' // getter
+ode: 'auto' | 'batch'): void
+// Batch Operations (batch mode only) (size of current batch queue)
+router.flush(): void // Emits 'batch-complete' or 'batch-failed' event): void
 
 // Events
-router.addEventListener(event: 'change', callback: (event: CustomEvent<ColorChangeEvent[]>) => void): void
-router.removeEventListener(event: 'change', callback: (event: CustomEvent<ColorChangeEvent[]>) => void): void
+router.addEventListener(event: 'change', callback: (event: CustomEvent<ColorChangeEvent[]>) => void): void// ColorDefinition, ColorReference, ColorFunction, PaletteConfig, ColorChangeEvent, LogCallback
+router.addEventListener(event: 'batch-complete', callback: (event: CustomEvent<{ changes: ColorChangeEvent[], errors: {key: string, error: Error}[], processedKeys: string[], summary: string }>) => void): voids' | 'json' (used by ColorRenderer)
+router.addEventListener(event: 'batch-failed', callback: (event: CustomEvent<{ error: Error, stage: string, processedKeys: string[], errors: {keys: string[], error: Error}[], summary: string }>) => void): void
+router.removeEventListener(event: string, callback: EventListener): void // Generic remove
+router.watch(key: string, callback: (newValue: string, oldValue: string | undefined) => void): void `ColorRenderer` Methods
 
 
-// Palette Management (delegated to PaletteManager)
-router.createPalette(name: string, options?: { extends?: string; overrides?: Record<string, any> }): void
+// Palette Management (delegated to PaletteManager)// Constructor
+router.createPalette(name: string, options?: { extends?: string; overrides?: Record<string, any> }): voidenderer(router: ColorRouter, format?: RenderFormat)
 router.extendPalette(name: string, basePalette: string, overrides?: Record<string, any>): void // shortcut for createPalette with extends
 router.copyPalette(sourceName: string, targetName: string): void
-router.deletePalette(name: string): void // Deletes palette and its associated color definitions
+router.deletePalette(name: string): void // Deletes palette and its associated color definitionsrenderer.render(): string // Generate output string in the renderer's current format
 router.getAllPalettes(): Array<{ name: string; config: PaletteConfig }>
 router.hasPalette(name: string): boolean
-
-// Color Access & Information
+renderer.format: RenderFormat // getter/setter
+// Color Access & InformationrFunctionRenderer(functionName: string, rendererFn: (args: any[]) => string): void // For the current format
 router.getAllKeysForPalette(paletteName: string): string[] // Gets all keys fully qualified for a palette, considering inheritance
 router.getDefinitionForKey(key: string): ColorDefinition | undefined
-router.valueToString(value: ColorDefinition): string // Converts a definition to its string representation
+router.valueToString(value: ColorDefinition): string // Converts a definition to its string representation `DependencyGraph` Methods (subset, accessed via `router.getDependencyGraph()`)
 router.has(key: string): boolean // Checks if a color key is defined
 router.getDefinitionType(key: string): 'function' | 'reference' | 'value' | 'undefined'
-router.getVisualDependencies(key: string): Set<string> // Gets visual dependencies for a key
-
-// Dependency Analysis (Accessing the graph directly)
-router.getDependencyGraph(): DependencyGraph // Returns the DependencyGraph instance
-
+router.getVisualDependencies(key: string): Set<string> // Gets visual dependencies for a keygraph.getPrerequisitesFor(key: string): string[]
+ndentsOf(key: string): string[]
+// Dependency Analysis (Accessing the graph directly)g[]> // { node: [...dependents] }
+router.getDependencyGraph(): DependencyGraph // Returns the DependencyGraph instance): string[] // Gets all dependents and sorts them for evaluation
+n dependencies
 // Configuration
 router.mode: 'auto' | 'batch' // getter
 router.setMode(mode: 'auto' | 'batch'): void
-router.batchQueueSize: number // getter (size of current batch queue)
+router.batchQueueSize: number // getter (size of current batch queue)## Integration with Culori.js
 router.setLogCallback(callback?: LogCallback): void
 
-// Types (Key types are in './types.ts')
-// ColorDefinition, ColorReference, ColorFunction, PaletteConfig, ColorChangeEvent, LogCallback
+// Types (Key types are in './types.ts')const router = new ColorRouter();
+// ColorDefinition, ColorReference, ColorFunction, PaletteConfig, ColorChangeEvent, LogCallback the code block...
 // RenderFormat = 'css-variables' | 'scss' | 'json' (used by ColorRenderer)
 ```
-
+Use Cases
 ### `ColorRenderer` Methods
-
+n System with Palette Inheritance
 ```typescript
-// Constructor
-// new ColorRenderer(router: ColorRouter, format?: RenderFormat)
+// Constructoruter.func` calls are correct for `bestContrastWith`)
+// new ColorRenderer(router: ColorRouter, format?: RenderFormat)```typescript
 
-// Rendering
-renderer.render(): string // Generate output string in the renderer's current format
-
-// Configuration
-renderer.format: RenderFormat // getter/setter
-renderer.registerFunctionRenderer(functionName: string, rendererFn: (args: any[]) => string): void // For the current format
+// Renderinge design system palette
+renderer.render(): string // Generate output string in the renderer's current formatem');
+', '#0066cc');
+// Configuration', '#ff6600');
+renderer.format: RenderFormat // getter/setterf');
+renderer.registerFunctionRenderer(functionName: string, rendererFn: (args: any[]) => string): void // For the current format);
 ```
 
-### `DependencyGraph` Methods (subset, accessed via `router.getDependencyGraph()`)
+### `DependencyGraph` Methods (subset, accessed via `router.getDependencyGraph()`)router.createPalette('light', {
 
 ```typescript
-graph.getPrerequisitesFor(key: string): string[]
-graph.getDependentsOf(key: string): string[]
-graph.getConnectionGraph(): Record<string, string[]> // { node: [...dependents] }
+graph.getPrerequisitesFor(key: string): string[]'design-system.neutral-100'),
+graph.getDependentsOf(key: string): string[]#f5f5f5',
+graph.getConnectionGraph(): Record<string, string[]> // { node: [...dependents] }00'),
 graph.getEvaluationOrderFor(startKey: string): string[] // Gets all dependents and sorts them for evaluation
 graph.topologicalSort(keysToSort: string[]): string[] // Sorts given keys based on dependencies
 ```
+Create dark theme palette
+router.createPalette('dark', {
+## Integration with Culori.jsit light structure
 
-
-## Integration with Culori.js
-
-```typescript
-const router = new ColorRouter();
-// ...rest of the code block...
+```typescriptral-900'),
+const router = new ColorRouter();#2d2d2d',
+// ...rest of the code block...00'),
 ```
 
 ## Use Cases
-
-### 1. Design System with Palette Inheritance
+All UI elements can reference either palette
+### 1. Design System with Palette Inheritancerouter.define('ui.button-bg', router.ref('light.primary')); // or 'dark.primary'
 
 (Example remains largely the same, ensure `router.func` calls are correct for `bestContrastWith`)
-```typescript
+```typescript 2. Dynamic Palette Switching (Conceptual)
 const router = new ColorRouter();
-// Define base design system palette
+// Define base design system paletteature. Instead, applications can choose to render or use keys from a specific palette. Changes to any palette's definitions will reactively update where those keys are used.
 router.createPalette('design-system');
 router.define('design-system.primary', '#0066cc');
-router.define('design-system.secondary', '#ff6600');
-router.define('design-system.neutral-100', '#ffffff');
-router.define('design-system.neutral-900', '#1a1a1a');
+router.define('design-system.secondary', '#ff6600');// To change a theme, you might update definitions in the 'dark' palette
+router.define('design-system.neutral-100', '#ffffff');ark.primary', '#0088ff'); // all direct/indirect references to dark.primary update
+router.define('design-system.neutral-900', '#1a1a1a');., from 'light.*' to 'dark.*')
 
 // Create light theme palette
-router.createPalette('light', {
+router.createPalette('light', { 3. Accessibility Compliance
   extends: 'design-system',
-  overrides: {
+  overrides: {nsure readable combinations:
     background: router.ref('design-system.neutral-100'),
     surface: '#f5f5f5',
-    'on-background': router.ref('design-system.neutral-900'),
-  },
-});
-
-// Create dark theme palette
+    'on-background': router.ref('design-system.neutral-900'),router.createPalette('card-theme');
+  },('card-theme.background', '#e3f2fd');
+});propriate fallbacks or a palette to search
+ContrastWith', 'card-theme.background', ['#333333', '#FFFFFF']));
+// Create dark theme paletteminimum ratio.
 router.createPalette('dark', {
-  extends: 'light', // inherit light structure
+  extends: 'light', // inherit light structure1.5)); // 1.5 is the ratio
   overrides: {
     background: router.ref('design-system.neutral-900'),
-    surface: '#2d2d2d',
+    surface: '#2d2d2d', 4. CSS Integration
     'on-background': router.ref('design-system.neutral-100'),
-  },
+  },roperties with proper variable relationships using `ColorRenderer`.
 });
 
-// All UI elements can reference either palette
-router.define('ui.button-bg', router.ref('light.primary')); // or 'dark.primary'
-```
-
+// All UI elements can reference either paletteconst router = new ColorRouter();
+router.define('ui.button-bg', router.ref('light.primary')); // or 'dark.primary'Palette('brand');
+```0066cc');
+00', '#ffffff');
 ### 2. Dynamic Palette Switching (Conceptual)
 
-Direct "active palette" switching is not a feature. Instead, applications can choose to render or use keys from a specific palette. Changes to any palette's definitions will reactively update where those keys are used.
-
-```typescript
+Direct "active palette" switching is not a feature. Instead, applications can choose to render or use keys from a specific palette. Changes to any palette's definitions will reactively update where those keys are used.router.define('button.primary', router.ref('brand.primary'));
+over', router.func('relativeTo', 'button.primary', 'r g b / 0.8'));
+```typescriptrastWith', 'button.primary', ['brand.neutral-100']));
 // To change a theme, you might update definitions in the 'dark' palette
 router.set('dark.primary', '#0088ff'); // all direct/indirect references to dark.primary update
-// Or, an application could switch which set of keys it's consuming (e.g., from 'light.*' to 'dark.*')
-```
-
+// Or, an application could switch which set of keys it's consuming (e.g., from 'light.*' to 'dark.*')const cssRenderer = new ColorRenderer(router, 'css-variables');
+```const output = cssRenderer.render();
+pecific logic for references and functions)
 ### 3. Accessibility Compliance
 
-Dynamic contrast calculations ensure readable combinations:
-
-```typescript
-router.createPalette('card-theme');
+Dynamic contrast calculations ensure readable combinations:nd-neutral-100: #ffffff;
+rand-primary);
+```typescript-mix(in srgb, var(--button-primary) 80%, transparent); /* Example, actual relativeTo rendering might differ */
+router.createPalette('card-theme');eutral-100);
 router.define('card-theme.background', '#e3f2fd');
 // Ensure 'bestContrastWith' has appropriate fallbacks or a palette to search
-router.define('card-theme.text', router.func('bestContrastWith', 'card-theme.background', ['#333333', '#FFFFFF']));
+router.define('card-theme.text', router.func('bestContrastWith', 'card-theme.background', ['#333333', '#FFFFFF']));``
 // Ensure 'minContrastWith' is used correctly; it needs a target color and a minimum ratio.
-// If the second arg is a palette, it might search that palette.
+// If the second arg is a palette, it might search that palette. 5. Modern CSS Support with Palette Structure
 router.define('card-theme.border', router.func('minContrastWith', 'card-theme.background', 1.5)); // 1.5 is the ratio
-```
+```ces instead of literals.
 
 ### 4. CSS Integration
-
-Export to CSS custom properties with proper variable relationships using `ColorRenderer`.
-
-```typescript
+router.createPalette('brand');
+Export to CSS custom properties with proper variable relationships using `ColorRenderer`.('brand.primary', '#0066cc');
+btle', router.func('colorMix', 'brand.primary', 'transparent', 0.2, 'lab')); // 20% mix with transparent
+```typescriptuter.func('relativeTo', 'brand.primary', 'calc(l + 0.2) c h'));
 const router = new ColorRouter();
 router.createPalette('brand');
-router.define('brand.primary', '#0066cc');
+router.define('brand.primary', '#0066cc');router.createPalette('brand-variations', {
 router.define('brand.neutral-100', '#ffffff');
 
-router.createPalette('button');
-router.define('button.primary', router.ref('brand.primary'));
+router.createPalette('button');unc('relativeTo', 'brand.primary', 'r g b / 0.8'), // 80% opacity
+router.define('button.primary', router.ref('brand.primary'));outer.func('relativeTo', 'brand.primary', 'calc(l - 0.1) c h'), // 10% darker
 router.define('button.primary-hover', router.func('relativeTo', 'button.primary', 'r g b / 0.8'));
 router.define('button.text-on-primary', router.func('bestContrastWith', 'button.primary', ['brand.neutral-100']));
 
 
-const cssRenderer = new ColorRenderer(router, 'css-variables');
+const cssRenderer = new ColorRenderer(router, 'css-variables'); 6. Multi-Platform Export
 const output = cssRenderer.render();
-/* Example Generated CSS (actual output depends on renderer's specific logic for references and functions)
+/* Example Generated CSS (actual output depends on renderer's specific logic for references and functions)erent output formats for various platforms using `ColorRenderer` with different formats.
 :root {
   --brand-primary: #0066cc;
-  --brand-neutral-100: #ffffff;
-  --button-primary: var(--brand-primary);
+  --brand-neutral-100: #ffffff;const router = new ColorRouter();
+  --button-primary: var(--brand-primary); palettes and colors ...
   --button-primary-hover: color-mix(in srgb, var(--button-primary) 80%, transparent); /* Example, actual relativeTo rendering might differ */
-  --button-text-on-primary: var(--brand-neutral-100);
-}
+  --button-text-on-primary: var(--brand-neutral-100);(router, 'css-variables');
+}const cssOutput = cssRenderer.render();
 */
-```
-
+```router, 'json');
+const jsonOutput = jsonRenderer.render(); // All values fully resolved
 ### 5. Modern CSS Support with Palette Structure
 
-Use new CSS color functions with palette references instead of literals.
+Use new CSS color functions with palette references instead of literals.const scssOutput = scssRenderer.render();
 
 ```typescript
-router.createPalette('brand');
-router.define('brand.primary', '#0066cc');
-router.define('brand.accent-subtle', router.func('colorMix', 'brand.primary', 'transparent', 0.2, 'lab')); // 20% mix with transparent
-router.define('brand.accent-highlight', router.func('relativeTo', 'brand.primary', 'calc(l + 0.2) c h'));
+router.createPalette('brand');*CSS**: Custom properties with optimal variable usage
+router.define('brand.primary', '#0066cc');- **SCSS**: Sass variables with dependency mapping
+router.define('brand.accent-subtle', router.func('colorMix', 'brand.primary', 'transparent', 0.2, 'lab')); // 20% mix with transparentsolved values)
+router.define('brand.accent-highlight', router.func('relativeTo', 'brand.primary', 'calc(l + 0.2) c h'));eming
 
 // Create variations palette
 router.createPalette('brand-variations', {
   extends: 'brand',
-  overrides: {
-    hover: router.func('relativeTo', 'brand.primary', 'r g b / 0.8'), // 80% opacity
-    pressed: router.func('relativeTo', 'brand.primary', 'calc(l - 0.1) c h'), // 10% darker
+  overrides: {TypeScript support with proper type inference.
+    hover: router.func('relativeTo', 'brand.primary', 'r g b / 0.8'), // 80% opacity- **Performance**: Efficient dependency tracking with `DependencyGraph` for minimal recalculation.
+    pressed: router.func('relativeTo', 'brand.primary', 'calc(l - 0.1) c h'), // 10% darkerth via renderers.
   },
 });
-```
-
-### 6. Multi-Platform Export
+```Culori.js.
+on.
+### 6. Multi-Platform Exportderers).
 
 Same palette structure, different output formats for various platforms using `ColorRenderer` with different formats.
 
-```typescript
-const router = new ColorRouter();
-// ... define palettes and colors ...
+```typescript: Topological sorting by `DependencyGraph` for optimal update order.
+const router = new ColorRouter();- **Memory Management**: Standard TypeScript/JavaScript garbage collection. Event listeners should be managed by the application if `ColorRouter` instances are frequently created/destroyed.
+// ... define palettes and colors ...ring would be an application concern.
 
 const cssRenderer = new ColorRenderer(router, 'css-variables');
-const cssOutput = cssRenderer.render();
-
-const jsonRenderer = new ColorRenderer(router, 'json');
+const cssOutput = cssRenderer.render();const jsonRenderer = new ColorRenderer(router, 'json');
 const jsonOutput = jsonRenderer.render(); // All values fully resolved
 
 const scssRenderer = new ColorRenderer(router, 'scss');
