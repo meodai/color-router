@@ -192,6 +192,20 @@
 
         <div class="space-y-8">
           <section class="bg-white p-6 shadow-sm border border-gray-200">
+            <h2 class="text-2xl mb-4">Live Color Demo</h2>
+            <div id="color-demo-container" class="space-y-4">
+              <!-- Card components will be rendered here using actual CSS variables -->
+            </div>
+          </section>
+
+          <section class="bg-white p-6 shadow-sm border border-gray-200">
+            <h2 class="text-2xl mb-4">Event Log</h2>
+            <div id="event-log-container" class="bg-gray-100 p-4 h-64 overflow-auto text-xs font-mono space-y-2">
+              <!-- Events will be logged here -->
+            </div>
+          </section>
+
+          <section class="bg-white p-6 shadow-sm border border-gray-200">
             <div class="flex justify-between items-center mb-4">
               <h2 class="text-2xl">Rendered Output</h2>
               <div class="flex bg-gray-100 p-1">
@@ -203,20 +217,6 @@
             </div>
             <div id="output-container" class="bg-gray-900 p-4 h-96 overflow-auto">
               <pre><code id="output-code" class="language-css text-sm text-gray-200 font-mono"></code></pre>
-            </div>
-          </section>
-
-          <section class="bg-white p-6 shadow-sm border border-gray-200">
-            <h2 class="text-2xl mb-4">Event Log</h2>
-            <div id="event-log-container" class="bg-gray-100 p-4 h-64 overflow-auto text-xs font-mono space-y-2">
-              <!-- Events will be logged here -->
-            </div>
-          </section>
-
-          <section class="bg-white p-6 shadow-sm border border-gray-200 sticky top-10">
-            <h2 class="text-2xl mb-4">Live Color Demo</h2>
-            <div id="color-demo-container" class="space-y-4">
-              <!-- Card components will be rendered here using actual CSS variables -->
             </div>
           </section>
         </div>
