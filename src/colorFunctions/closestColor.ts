@@ -1,5 +1,6 @@
-import { parse, differenceEuclidean, formatHex, type Color } from 'culori';
+import { parse, differenceEuclidean } from 'culori';
 import type { ColorRouter } from '../ColorRouter';
+import type { FunctionRenderer } from '../ColorRenderer';
 
 /**
  * Finds the color in a specified palette that is perceptually closest to a target color.
@@ -88,3 +89,23 @@ export function closestColor(
 
   return closestColorHex;
 }
+
+/**
+ * Renderer functions for different output formats
+ */
+export const closestColorRenderers: Record<string, FunctionRenderer> = {
+  'css-variables': (_args: any[]): string => {
+    // CSS doesn't have native closest-color function, use computed value
+    return '';
+  },
+  
+  'scss': (_args: any[]): string => {
+    // SCSS doesn't have native closest-color function, use computed value
+    return '';
+  },
+  
+  'json': (_args: any[]): string => {
+    // For JSON, always use computed values
+    return '';
+  }
+};
