@@ -6,7 +6,7 @@ export { minContrastWith, minContrastWithRenderers } from './minContrastWith';
 export { lighten, lightenRenderers } from './lighten';
 export { darken, darkenRenderers } from './darken';
 export { furthestFrom, furthestFromRenderers } from './furthestFrom';
-export { closestColor } from './closestColor';
+export { closestColor, closestColorRenderers } from './closestColor';
 
 // Type definitions for easier importing
 export type { FunctionRenderer } from '../ColorRenderer';

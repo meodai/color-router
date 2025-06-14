@@ -7,8 +7,8 @@ import type { FunctionRenderer } from '../ColorRenderer';
  * @param colorSpace - Color space to work in (e.g., 'oklch', 'hsl', 'lab', 'a98-rgb')
  * @param modifications - Array of modifications for each channel [channel1, channel2, channel3, alpha?]
  *                       - null: keep original value
- *                       - number: set absolute value  
- *                       - string with +/-: relative modification (e.g., '+180', '-10')
+ *                       - number: set absolute value
+ *                       - string with operator (+, -, *, /) and value: relative modification (e.g., '+180', '-10', '*0.5', '/2')
  * @returns The modified color as a hex string
  */
 export function relativeTo(baseColor: string, colorSpace: string, modifications: (number | string | null)[]): string {
@@ -30,17 +30,43 @@ export function relativeTo(baseColor: string, colorSpace: string, modifications:
     
     modifications.forEach((mod, index) => {
       if (mod === null || index >= channelNames.length) return;
-      
+
       const channelName = channelNames[index];
       const currentValue = (colorInSpace as any)[channelName] || 0;
-      
-      if (typeof mod === 'string' && (mod.startsWith('+') || mod.startsWith('-'))) {
-        // Relative modification
-        const delta = parseFloat(mod);
-        (modified as any)[channelName] = currentValue + delta;
-      } else if (typeof mod === 'number' || typeof mod === 'string') {
+
+      if (typeof mod === 'string') {
+        const operator = mod[0];
+        const valueStr = mod.slice(1);
+        const numericValue = parseFloat(valueStr);
+
+        if (!isNaN(numericValue)) {
+          switch (operator) {
+            case '+':
+              (modified as any)[channelName] = currentValue + numericValue;
+              break;
+            case '-':
+              (modified as any)[channelName] = currentValue - numericValue;
+              break;
+            case '*':
+              (modified as any)[channelName] = currentValue * numericValue;
+              break;
+            case '/':
+              if (numericValue !== 0) {
+                (modified as any)[channelName] = currentValue / numericValue;
+              }
+              // If numericValue is 0 for division, keep original value (or handle as error)
+              break;
+            default:
+              // If no recognized operator, try to parse the whole string as an absolute value
+              (modified as any)[channelName] = parseFloat(mod);
+          }
+        } else {
+          // If the value part after operator is not a number, or if no operator, parse whole string
+          (modified as any)[channelName] = parseFloat(mod);
+        }
+      } else if (typeof mod === 'number') {
         // Absolute value
-        (modified as any)[channelName] = parseFloat(mod.toString());
+        (modified as any)[channelName] = mod;
       }
     });
 
@@ -85,24 +111,40 @@ export const relativeToRenderers: Record<string, FunctionRenderer> = {
     const channelNames = getChannelNames(colorSpace);
     const channels = modifications.map((mod: any, index: number) => {
       const channelName = channelNames[index];
-      
+
       if (mod === null) {
         return channelName; // Use original channel value
-      } else if (typeof mod === 'string' && (mod.startsWith('+') || mod.startsWith('-'))) {
-        return `calc(${channelName} ${mod.startsWith('+') ? '+' : ''} ${mod.slice(1)})`;
-      } else {
+      } else if (typeof mod === 'string') {
+        const operator = mod[0];
+        const valueStr = mod.slice(1);
+        if (['+', '-', '*', '/'].includes(operator) && valueStr.length > 0 && !isNaN(parseFloat(valueStr))) {
+          return `calc(${channelName} ${operator} ${valueStr})`;
+        } else {
+          // Absolute value string or malformed operator string
+          return mod;
+        }
+      } else { // mod is a number
         return mod.toString();
       }
     }).slice(0, 3); // Only first 3 channels for most color spaces
-    
+
     // Handle alpha separately if provided
     const alphaChannel = modifications[3];
-    const alphaStr = alphaChannel !== undefined && alphaChannel !== null 
-      ? ` / ${typeof alphaChannel === 'string' && (alphaChannel.startsWith('+') || alphaChannel.startsWith('-')) 
-          ? `calc(alpha ${alphaChannel.startsWith('+') ? '+' : ''} ${alphaChannel.slice(1)})` 
-          : alphaChannel}`
-      : '';
-    
+    let alphaStr = '';
+    if (alphaChannel !== undefined && alphaChannel !== null) {
+      if (typeof alphaChannel === 'string') {
+        const operator = alphaChannel[0];
+        const valueStr = alphaChannel.slice(1);
+        if (['+', '-', '*', '/'].includes(operator) && valueStr.length > 0 && !isNaN(parseFloat(valueStr))) {
+          alphaStr = ` / calc(alpha ${operator} ${valueStr})`;
+        } else {
+          alphaStr = ` / ${alphaChannel}`;
+        }
+      } else { // alphaChannel is a number
+        alphaStr = ` / ${alphaChannel}`;
+      }
+    }
+
     return `color(from ${baseColor} ${colorSpace} ${channels.join(' ')}${alphaStr})`;
   },
   
@@ -120,5 +162,5 @@ export const relativeToRenderers: Record<string, FunctionRenderer> = {
 // Example usage:
 // relativeTo('red', 'oklch', [null, null, '+180']) // Rotate hue by 180 degrees
 // relativeTo('red', 'oklch', [null, null, '180'])  // Set hue to 180 degrees
-// relativeTo('red', 'a98-rgb', ['calc(r - 10)', null, null]) // Reduce red channel by 10
-// relativeTo('#ff0000', 'hsl', ['+180', null, null]) // Rotate hue by 180 degrees
+// relativeTo('blue', 'oklch', [null, '*0.5', null]) // Reduce chroma by 50%
+// relativeTo('#ff0000', 'hsl', ['+180', '/2', '*1.1']) // Rotate hue, halve saturation, increase lightness by 10%

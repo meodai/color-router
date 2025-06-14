@@ -153,19 +153,16 @@ export class ColorRouter {
     const finalResolutionDependencies = Array.from(resolutionDependencySet);
     let finalVisualDependenciesArray = Array.from(visualDependencySet);
 
-    // If visual set is empty (no palette summarization occurred and no direct color refs were args) 
-    // OR if it only contains a subset of resolution deps (e.g. palette aware func without palette args but with color key args),
-    // we need to ensure it's correctly representing the visual aspect.
-    // The current logic:
-    // - Direct color keys are added to both visual and resolution.
-    // - Palette-aware functions add `palette:name` to visual, and individual colors to resolution.
-    // If finalVisualDependenciesArray is empty but finalResolutionDependencies is not,
-    // it means all dependencies were direct color refs and the function was not palette-aware,
-    // or it was palette-aware but only took direct color refs. In this case, visual should mirror resolution.
+    // Fallback: If the visual dependency set is empty after processing arguments,
+    // but resolution dependencies were identified (e.g., direct color references in a non-palette-aware function,
+    // or a palette-aware function called only with direct color references),
+    // then the visual dependencies should mirror the resolution dependencies.
+    // This ensures that direct dependencies are always visualized if present.
     if (finalVisualDependenciesArray.length === 0 && finalResolutionDependencies.length > 0) {
         finalVisualDependenciesArray = finalResolutionDependencies;
     }
-    // If both are empty (e.g. a function like lighten('#fff', 0.1)), visualDependencies will be an empty array. Correct.
+    // If both dependency sets are empty (e.g., for a function like lighten('#fff', 0.1) with no key-based arguments),
+    // visualDependencies will correctly be an empty array.
 
     return new ColorFunction(implementation, args, finalResolutionDependencies, finalVisualDependenciesArray);
   }
