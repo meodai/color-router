@@ -2,6 +2,12 @@ import { parse, converter } from 'culori';
 import type { ColorRouter } from '../ColorRouter';
 import type { FunctionRenderer } from '../ColorRenderer';
 
+/**
+ * Calculates the CIELAB Delta E (Euclidean distance) between two colors.
+ * @param color1 The first color string.
+ * @param color2 The second color string.
+ * @returns The perceptual distance between the two colors. Returns 0 if parsing fails or an error occurs.
+ */
 function colorDistance(color1: string, color2: string): number {
   try {
     const toLab = converter('lab');
@@ -20,6 +26,17 @@ function colorDistance(color1: string, color2: string): number {
   }
 }
 
+/**
+ * Finds the color within a specified palette that has the greatest average perceptual distance
+ * to all other colors in the same palette. The distance is calculated in the CIELAB color space.
+ *
+ * The `this` context must be bound to a `ColorRouter` instance.
+ *
+ * @param this The ColorRouter instance.
+ * @param paletteName The name of the palette to search within.
+ * @returns The hex string of the color that is, on average, furthest from other colors in the palette.
+ *          Returns black ("#000000") if the palette is not found, is empty, or contains no valid/resolvable colors.
+ */
 export function furthestFrom(this: ColorRouter, paletteName: string): string {
   if (!this.getAllPalettes().find((p) => p.name === paletteName)) {
     console.warn(`Palette "${paletteName}" not found, returning black`);
@@ -86,6 +103,11 @@ export function furthestFrom(this: ColorRouter, paletteName: string): string {
   return furthestColor;
 }
 
+/**
+ * An object containing placeholder renderer functions for the `furthestFrom` color function.
+ * These renderers currently return empty strings, indicating that `furthestFrom` should be resolved to its final value
+ * rather than being represented as a function call in CSS or SCSS.
+ */
 export const furthestFromRenderers: Record<string, FunctionRenderer> = {
   'css-variables': (_args: any[]): string => {
     return '';
