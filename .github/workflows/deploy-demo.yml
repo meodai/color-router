@@ -42,6 +42,11 @@ jobs:
     - name: Add .nojekyll file
       run: touch ./demo-dist/.nojekyll
       
+    - name: Move demo files to root of build output
+      run: |
+        mv ./demo-dist/demo/* ./demo-dist/
+        rmdir ./demo-dist/demo
+      
     - name: Setup Pages
       uses: actions/configure-pages@v4
       

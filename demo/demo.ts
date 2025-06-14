@@ -1,6 +1,6 @@
 import * as culori from 'culori';
-import { ColorRouter } from './router';
-import { ColorRenderer, SVGRenderer } from './renderers';
+import { ColorRouter } from '../src/router';
+import { ColorRenderer, SVGRenderer } from '../src/renderers';
 import {
   bestContrastWithRenderers,
   colorMixRenderers,
@@ -9,7 +9,7 @@ import {
   lightenRenderers,
   darkenRenderers,
   furthestFromRenderers,
-} from './colorFunctions';
+} from '../src/colorFunctions';
 import { parseDemoInput } from './demoInputParser'; // Import the new parser
 
 const router = new ColorRouter();

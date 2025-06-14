@@ -32,19 +32,23 @@ export default defineConfig(({ mode }) => {
         emptyOutDir: true
       }
     }
-  } else {
-    // Demo build configuration (default)
+  } else if (mode === 'demo') {
+    // Demo build configuration
     return {
-      base: mode === 'demo' ? '/color-router/' : '/',
-      root: '.',
+      base: '/visual-route/',
       build: {
         outDir: 'demo-dist',
+        emptyOutDir: true,
         rollupOptions: {
-          input: {
-            main: './index.html'
-          }
+          input: resolve(__dirname, 'demo/index.html')
         }
-      },
+      }
+    }
+  } else {
+    // Development configuration
+    return {
+      base: '/',
+      root: './demo',
       server: {
         port: 3000,
         open: true

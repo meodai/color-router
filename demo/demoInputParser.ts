@@ -1,5 +1,5 @@
-import { ColorRouter } from './router';
-import { ColorDefinition } from './types';
+import { ColorRouter } from '../src/router';
+import { ColorDefinition } from '../src/types';
 
 /**
  * Parses the color definition string from the demo input field.
