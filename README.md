@@ -1,6 +1,17 @@
 # Color Router System
 
-An advanced TypeScript color management system with reactive routing, palette inheritance, and multiple output formats.
+An advanced TypeScript color management system that works like a smart, interconnected color spreadsheet for your design projects. It allows reactive routing, palette inheritance, and multiple output formats.
+
+**Imagine your colors in a spreadsheet:**
+
+- **Palettes are like Sheets:** Organize colors in different "sheets" (e.g., `brand`, `layout`, `dark-theme`).
+- **Define Colors like Filling Cells:** Assign a color to a name (e.g., `brand.primary = '#3498db'`).
+- **Link Colors (References):** Make one color directly point to another (e.g., `header.background = brand.primary`). If `brand.primary` changes, `header.background` updates automatically. Use `router.ref('brand.primary')`.
+- **Calculate Colors (Functions):** Define colors based on calculations involving other colors (e.g., `button.hover = darken(brand.primary, 10%)` or `text.onPrimary = bestContrastWith(brand.primary)`). Use `router.func('darken', ...)`.
+- **Automatic Updates:** Changes to any source color automatically cascade to all dependent colors.
+- **Multiple Output Formats:** Export your color system as CSS variables, SCSS, JSON, etc., using **Renderers**.
+
+This system turns complex color management into a logical, maintainable, and less error-prone process.
 
 ## The Problem: Design System Complexity
 
@@ -31,7 +42,7 @@ import { ColorRouter, ColorRenderer } from 'color-router';
 // Create renderer and router
 const renderer = new ColorRenderer();
 const router = new ColorRouter();
-router.setColorRenderer(ColorRenderer);
+router.setColorRenderer(ColorRenderer); // Make sure ColorRenderer is available to the router
 
 // Create palette and define colors
 router.createPalette('base');
@@ -42,8 +53,8 @@ router.define('base.background', router.func('bestContrastWith', 'base.text', 'b
 
 // Get rendered colors
 // Get CSS variables output
-const renderer = router.createRenderer('css-variables');
-const cssVars = renderer.render();
+const cssRenderer = router.createRenderer('css-variables'); // Use the injected ColorRenderer
+const cssVars = cssRenderer.render();
 console.log(cssVars);
 // Output: --base-primary: #3498db; --base-secondary: #2ecc71; --base-text: #3498db; --base-background: #ffffff;
 ```
@@ -61,29 +72,31 @@ npm run dev  # Start development server
 
 ### Core Functionality
 
-- **Reactive Color Routing**: Automatic resolution and updating of color dependencies
-- **Palette Inheritance**: Create color palettes that extend other palettes
-- **Reference System**: Use `ref()` to reference colors from other palettes
-- **Function System**: Built-in color manipulation functions + custom function registration
-- **Batch vs Auto Mode**: Control when color updates are processed
-- **Multiple Output Formats**: CSS variables, SCSS variables, and JSON
+- **Reactive Color Routing**: Automatic resolution and updating of color dependencies.
+- **Palette Inheritance & Management**: Create color palettes that extend others, managed by a dedicated `PaletteManager`.
+- **Reference System**: Use `router.ref()` to reference colors.
+- **Function System**: Built-in color manipulation functions (like `darken`, `bestContrastWith`) + custom function registration.
+- **Event System**: Get notified of changes via `router.addEventListener('change', ...)` or `router.watch('key', ...)`. Batch operations also emit `batch-complete` or `batch-failed` events.
+- **Batch vs Auto Mode**: Control when color updates are processed.
+- **Multiple Output Formats**: `ColorRenderer` can output to CSS variables, SCSS variables, and JSON.
 
 ### Enhanced Features
 
-- **Enhanced `bestContrastWith`**: Now accepts optional palette parameter to search through all colors in a palette for optimal contrast
-- **Format-Specific Function Rendering**: Functions render differently based on output format (CSS uses `color-mix()`, SCSS uses `mix()`, etc.)
-- **Modular TypeScript Architecture**: Separate ColorRouter and ColorRenderer classes with proper typing
-- **Full TypeScript Support**: Complete type definitions for all APIs
+- **Enhanced `bestContrastWith`**, **`minContrastWith`**, **`closestColor`**: These functions can search entire palettes for optimal color choices.
+- **Format-Specific Function Rendering**: Functions like `colorMix` render to native CSS `color-mix()` or SCSS `mix()` where appropriate.
+- **Modular TypeScript Architecture**: Core logic is separated into `ColorRouter` (orchestrator), `PaletteManager` (palette operations), `DependencyGraph` (dependency tracking), and `ColorRenderer` (output generation).
+- **Full TypeScript Support**: Complete type definitions for all APIs.
 
 ### Built-in Functions
-
-- `bestContrastWith(color, [palette])` - Find best contrasting color, optionally from a specific palette
-- `colorMix(color1, color2, ratio, colorSpace)` - Mix two colors with specified ratio and color space
-- `lighten(color, amount)` - Lighten a color by percentage
-- `darken(color, amount)` - Darken a color by percentage
-- `relativeTo(color, palette)` - Make color relative to palette context
-- `minContrastWith(color, minRatio)` - Ensure minimum contrast ratio
-- `furthestFrom(palette)` - Find the color that is furthest apart from all other colors in a palette
+(Briefly list key functions, refer to specs.md for full signatures)
+- `bestContrastWith(colorKey, paletteNameOrFallbackArray)`
+- `colorMix(color1Key, color2Key, ratio, colorSpace?)`
+- `lighten(colorKey, amount)`
+- `darken(colorKey, amount)`
+- `relativeTo(baseColorKey, cssTransformString)`
+- `minContrastWith(colorKey, ratioOrPaletteName)`
+- `furthestFrom(paletteName)`
+- `closestColor(colorKey, paletteNameOrColorArray)`
 
 ## Build Commands
 
@@ -276,19 +289,22 @@ By capturing not just _what_ colors exist, but _why_ they exist and _how_ they r
 
 ### ColorRouter
 
-- `createPalette(name, config?)` - Create new palette with optional inheritance
-- `define(key, value)` - Define a color value
-- `ref(key)` - Create reference to another color
-- `func(name, ...args)` - Create function call
-- `resolve(key)` - Get resolved color value
-- `render(format)` - Render all colors in specified format
-- `flush()` - Process batch queue (in batch mode)
+- `createPalette(name, config?)`: Create new palette.
+- `define(key, value)`: Define a color (direct value, `ref()`, or `func()`).
+- `set(key, value)`: Modify an existing color definition.
+- `ref(key)`: Create a static reference to another color.
+- `func(name, ...args)`: Create a dynamic, function-based color.
+- `resolve(key)`: Get the final computed string value of a color.
+- `flush()`: Process pending changes in 'batch' mode. Emits `batch-complete` or `batch-failed`.
+- `addEventListener(type, callback)`, `watch(key, callback)`: Listen to color changes.
+- `setColorRenderer(ColorRendererClass)`: Injects the `ColorRenderer` class.
+- `createRenderer(format?)`: Creates an instance of the injected `ColorRenderer`.
 
-### ColorRenderer
+### ColorRenderer (Instantiated via `router.createRenderer()` or directly)
 
-- `render()` - Generate output in current format
-- `registerFunctionRenderer(name, renderer)` - Add custom function renderer
-- Format-specific function rendering for CSS, SCSS, and JSON outputs
+- `constructor(router, format?)`
+- `render()`: Generate output string (CSS, SCSS, JSON).
+- `format`: Get or set the output format.
 
 ## License
 
