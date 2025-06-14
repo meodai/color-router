@@ -319,16 +319,29 @@ export class ColorRouter {
 
   resolve(key: string): string {
     if (!this.#resolved.has(key)) {
-      try { 
-        this.#resolveKey(key); 
-      } catch (e) { 
+      try {
+        this.#resolveKey(key);
+      } catch (e) {
+        // Log the error if a callback is provided
         if (this.#logCallback) {
           this.#logCallback(`Failed to resolve '${key}': ${(e as Error).message}`);
         }
-        return 'invalid'; 
+        // Re-throw the error to make the failure explicit to the caller
+        throw e;
       }
     }
-    return this.#resolved.get(key)!;
+    // If #resolveKey was successful and didn't throw, or if the key was already resolved,
+    // the value should be in the cache.
+    const resolvedValue = this.#resolved.get(key);
+    
+    // This check is a safeguard. If #resolveKey completes without error, 
+    // it's expected to populate #resolved.
+    if (resolvedValue === undefined) {
+      // This situation indicates an unexpected internal state if #resolveKey was supposed to succeed.
+      // Throw a generic error, as the specific cause should have been caught and re-thrown above.
+      throw new PaletteError(`Internal error: Value for '${key}' not found in resolved cache after attempted resolution, and no explicit error was thrown.`);
+    }
+    return resolvedValue;
   }
 
   #getAllPaletteKeys(paletteName: string): string[] {
