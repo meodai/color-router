@@ -204,7 +204,7 @@ export class SVGRenderer extends ColorRenderer {
       } ${to.y}, ${to.x} ${to.y}`;
 
       // Background path is always solid
-      return `<path d="${path}" stroke="#000" stroke-width="${strokeWidth + 1.5}" fill="none" stroke-dasharray="none" />`;
+      return `<path d="${path}" stroke="#000" stroke-width="${strokeWidth + 1}" fill="none" stroke-dasharray="none" />`;
     }).join('');
 
     const colorPaths = connections.map((connection) => {
