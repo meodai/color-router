@@ -195,16 +195,16 @@ export class SVGRenderer extends ColorRenderer {
 
     const backgroundPaths = connections.map((connection) => {
       const { from, to } = connection;
-      // Lines connect directly to the center of the 'to' dot (to.x, to.y)
       const yDiff = Math.abs(from.y - to.y);
       const amp = 40 + (yDiff * 0.3);
       const path = `M ${from.x} ${from.y} C ${
         from.x + (from.isLeft ? amp : -amp)
       } ${from.y}, ${
-        to.x + (to.isLeft ? amp : -amp) // Control point uses 'to.isLeft' for curve direction
-      } ${to.y}, ${to.x} ${to.y}`; // Line terminates at to.x, to.y
+        to.x + (to.isLeft ? amp : -amp) 
+      } ${to.y}, ${to.x} ${to.y}`;
 
-      return `<path d="${path}" stroke="#000" stroke-width="${strokeWidth + 1.5}" fill="none" />`;
+      // Background path is always solid
+      return `<path d="${path}" stroke="#000" stroke-width="${strokeWidth + 1.5}" fill="none" stroke-dasharray="none" />`;
     }).join('');
 
     const colorPaths = connections.map((connection) => {
@@ -217,7 +217,10 @@ export class SVGRenderer extends ColorRenderer {
         to.x + (to.isLeft ? amp : -amp)
       } ${to.y}, ${to.x} ${to.y}`;
 
-      return `<path d="${path}" stroke="${from.color}" stroke-width="${strokeWidth}" fill="none" data-color="${from.color}" />`;
+      const fromDefType = this.#router.getDefinitionType(from.key);
+      const strokeDasharray = fromDefType === 'function' ? '5,5' : 'none';
+
+      return `<path d="${path}" stroke="${from.color}" stroke-width="${strokeWidth}" fill="none" data-color="${from.color}" stroke-dasharray="${strokeDasharray}" />`;
     }).join('');
 
     return `

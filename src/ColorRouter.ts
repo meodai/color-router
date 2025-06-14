@@ -522,6 +522,23 @@ export class ColorRouter {
     return Array.from(this.#palettes.entries()).map(([name, config]) => ({ name, config }));
   }
 
+  public getDefinitionType(key: string): 'function' | 'reference' | 'value' {
+    try {
+      const definition = this.#getDefinition(key); // Uses the private method that handles inheritance
+      if (definition instanceof ColorFunction) {
+        return 'function';
+      }
+      if (definition instanceof ColorReference) {
+        return 'reference';
+      }
+      return 'value'; // It's a direct color string or resolved from one
+    } catch (e) {
+      // This case should ideally not be hit if keys are always valid from the renderer
+      if (this.#logCallback) this.#logCallback(`Error getting definition type for ${key} in getDefinitionType: ${(e as Error).message}`);
+      return 'value'; // Default to solid line if type is unknown or error
+    }
+  }
+
   // Method for SVGRenderer to get dependencies suitable for visualization
   public getVisualDependencies(key: string): Set<string> {
     const definition = this.#getDefinition(key); // This gets the ColorDefinition
