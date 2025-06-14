@@ -9,6 +9,7 @@ export type ColorKey = string;
 export interface PaletteConfig {
   extends?: string;
   overrides?: Record<string, any>;
+  description?: string; // Add optional description property
 }
 
 export interface ColorChangeEvent {

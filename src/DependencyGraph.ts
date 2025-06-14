@@ -2,9 +2,7 @@ import { ColorDefinition, ColorReference, ColorFunction, LogCallback } from './t
 import { CircularDependencyError } from './errors';
 
 export class DependencyGraph {
-  // Map: node -> Set<nodes_it_depends_on (its prerequisites)>
   private readonly nodeToPrerequisites = new Map<string, Set<string>>();
-  // Map: node -> Set<nodes_that_depend_on_it (its direct dependents)>
   private readonly nodeToDependents = new Map<string, Set<string>>();
   private logCallback?: LogCallback;
 
@@ -18,12 +16,11 @@ export class DependencyGraph {
 
   private getPrerequisitesFromValue(value: ColorDefinition): string[] {
     if (value instanceof ColorReference) return [value.key];
-    if (value instanceof ColorFunction) return value.dependencies; // These are the resolution dependencies
+    if (value instanceof ColorFunction) return value.dependencies;
     return [];
   }
 
   public updateEdges(key: string, value: ColorDefinition): void {
-    // 1. Clear old prerequisite edges for 'key'
     const oldPrerequisites = this.nodeToPrerequisites.get(key);
     if (oldPrerequisites) {
       for (const prereq of oldPrerequisites) {
@@ -32,7 +29,6 @@ export class DependencyGraph {
     }
     this.nodeToPrerequisites.set(key, new Set());
 
-    // 2. Add new prerequisite edges for 'key'
     const newPrerequisites = this.getPrerequisitesFromValue(value);
     for (const prereq of newPrerequisites) {
       this.nodeToPrerequisites.get(key)!.add(prereq);
@@ -84,7 +80,6 @@ export class DependencyGraph {
     const visit = (node: string): void => {
       if (visited.has(node)) return;
       if (recursionStack.has(node)) {
-        // Log if callback is available, then throw
         const error = new CircularDependencyError([...recursionStack, node]);
         if (this.logCallback) {
           this.logCallback(`Circular dependency detected for '${node}': ${error.message}`);
@@ -108,7 +103,7 @@ export class DependencyGraph {
 
     for (const key of keysToSort) {
       if (!visited.has(key)) {
-        visit(key); // This call can throw CircularDependencyError
+        visit(key);
       }
     }
     return sorted;

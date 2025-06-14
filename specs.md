@@ -284,7 +284,6 @@ const cssResult = cssRenderer.render();
 // --brand-primary: #ff0000;
 // --layout-on-background: #ffffff; /* Example resolved value */
 
-
 // JSON Renderer - all final colors resolved to hex values
 const jsonRenderer = new ColorRenderer(router, 'json');
 const jsonResult = jsonRenderer.render();
@@ -323,7 +322,7 @@ Renderers provide format-specific function implementations where possible. `Colo
 
 ### Renderer Capabilities System (Conceptual)
 
-The `ColorRenderer` achieves format-specific rendering by having internal logic and registered function renderers for each format. While a formal, separate `RendererCapabilities` interface (as previously envisioned) isn't explicitly exported or used as a standalone module, the *concept* is implemented within `ColorRenderer`'s `registerFunctionRenderer` and its private rendering methods. It dynamically chooses how to render a `ColorFunction` based on the target format and the available registered renderers for that function and format.
+The `ColorRenderer` achieves format-specific rendering by having internal logic and registered function renderers for each format. While a formal, separate `RendererCapabilities` interface (as previously envisioned) isn't explicitly exported or used as a standalone module, the _concept_ is implemented within `ColorRenderer`'s `registerFunctionRenderer` and its private rendering methods. It dynamically chooses how to render a `ColorFunction` based on the target format and the available registered renderers for that function and format.
 
 If a specific function (e.g., `colorMix`) has a registered renderer for the `css-variables` format (like `colorMixRenderers.css`), that renderer will be used. If not, or if the renderer decides to fallback, the function might be resolved to its computed value.
 
@@ -348,7 +347,9 @@ router.set(key: string, value: ColorDefinition): void // Alias for define
 // JSON/JavaScript renderer output (via ColorRenderer with 'json' format):n: (...args: any[]) => string, options?: { isPaletteAware?: boolean }): void
 // "accent": "#cc3366" // pre-computed
 ```
+
 // router.func('bestContrastWith', targetColorKey: string, paletteNameOrFallbackArray: string | string[], fallbackColor?: string)
+
 ### Custom Renderersr2Key: string, ratio?: number, colorSpace?: string)
 
 One could create new classes similar to `ColorRenderer` to support other output formats by consuming data from `ColorRouter`.kColor?: string)
@@ -428,10 +429,14 @@ router.setLogCallback(callback?: LogCallback): void
 // ColorDefinition, ColorReference, ColorFunction, PaletteConfig, ColorChangeEvent, LogCallback the code block...
 // RenderFormat = 'css-variables' | 'scss' | 'json' (used by ColorRenderer)
 ```
+
 Use Cases
+
 ### `ColorRenderer` Methods
+
 n System with Palette Inheritance
-```typescript
+
+````typescript
 // Constructoruter.func` calls are correct for `bestContrastWith`)
 // new ColorRenderer(router: ColorRouter, format?: RenderFormat)```typescript
 
@@ -441,7 +446,7 @@ renderer.render(): string // Generate output string in the renderer's current fo
 // Configuration', '#ff6600');
 renderer.format: RenderFormat // getter/setterf');
 renderer.registerFunctionRenderer(functionName: string, rendererFn: (args: any[]) => string): void // For the current format);
-```
+````
 
 ### `DependencyGraph` Methods (subset, accessed via `router.getDependencyGraph()`)router.createPalette('light', {
 
@@ -452,8 +457,10 @@ graph.getConnectionGraph(): Record<string, string[]> // { node: [...dependents] 
 graph.getEvaluationOrderFor(startKey: string): string[] // Gets all dependents and sorts them for evaluation
 graph.topologicalSort(keysToSort: string[]): string[] // Sorts given keys based on dependencies
 ```
+
 Create dark theme palette
 router.createPalette('dark', {
+
 ## Integration with Culori.jsit light structure
 
 ```typescriptral-900'),
@@ -462,11 +469,14 @@ const router = new ColorRouter();#2d2d2d',
 ```
 
 ## Use Cases
+
 All UI elements can reference either palette
+
 ### 1. Design System with Palette Inheritancerouter.define('ui.button-bg', router.ref('light.primary')); // or 'dark.primary'
 
 (Example remains largely the same, ensure `router.func` calls are correct for `bestContrastWith`)
-```typescript 2. Dynamic Palette Switching (Conceptual)
+
+````typescript 2. Dynamic Palette Switching (Conceptual)
 const router = new ColorRouter();
 // Define base design system paletteature. Instead, applications can choose to render or use keys from a specific palette. Changes to any palette's definitions will reactively update where those keys are used.
 router.createPalette('design-system');
@@ -586,7 +596,7 @@ const jsonOutput = jsonRenderer.render(); // All values fully resolved
 
 const scssRenderer = new ColorRenderer(router, 'scss');
 const scssOutput = scssRenderer.render();
-```
+````
 
 - **CSS**: Custom properties with optimal variable usage
 - **SCSS**: Sass variables with dependency mapping

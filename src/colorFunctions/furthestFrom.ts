@@ -2,9 +2,6 @@ import { parse, converter } from 'culori';
 import type { ColorRouter } from '../ColorRouter';
 import type { FunctionRenderer } from '../ColorRenderer';
 
-/**
- * Calculates the distance between two colors in LAB color space
- */
 function colorDistance(color1: string, color2: string): number {
   try {
     const toLab = converter('lab');
@@ -13,7 +10,6 @@ function colorDistance(color1: string, color2: string): number {
 
     if (!lab1 || !lab2) return 0;
 
-    // Calculate Euclidean distance in LAB space
     const deltaL = (lab1.l || 0) - (lab2.l || 0);
     const deltaA = (lab1.a || 0) - (lab2.a || 0);
     const deltaB = (lab1.b || 0) - (lab2.b || 0);
@@ -24,13 +20,7 @@ function colorDistance(color1: string, color2: string): number {
   }
 }
 
-/**
- * Finds the color that is furthest apart from all other colors in a palette
- * @param paletteName - The palette name to search for the most isolated color
- * @returns The color with the highest average distance to all other colors
- */
 export function furthestFrom(this: ColorRouter, paletteName: string): string {
-  // Get all colors from the specified palette
   if (!this.getAllPalettes().find((p) => p.name === paletteName)) {
     console.warn(`Palette "${paletteName}" not found, returning black`);
     return '#000000';
@@ -43,7 +33,6 @@ export function furthestFrom(this: ColorRouter, paletteName: string): string {
   }
 
   if (paletteKeys.length === 1) {
-    // Only one color in palette, return it
     try {
       const color = this.resolve(paletteKeys[0]);
       return color !== 'invalid' ? color : '#000000';
@@ -52,7 +41,6 @@ export function furthestFrom(this: ColorRouter, paletteName: string): string {
     }
   }
 
-  // Resolve all colors first and filter out invalid ones
   const validColors: { key: string; color: string }[] = [];
   for (const key of paletteKeys) {
     try {
@@ -61,7 +49,6 @@ export function furthestFrom(this: ColorRouter, paletteName: string): string {
         validColors.push({ key, color });
       }
     } catch (e) {
-      // Skip invalid colors
       continue;
     }
   }
@@ -77,7 +64,6 @@ export function furthestFrom(this: ColorRouter, paletteName: string): string {
   let furthestColor: string = validColors[0].color;
   let maxAverageDistance = 0;
 
-  // Calculate average distance for each color to all others
   for (const { color: currentColor } of validColors) {
     let totalDistance = 0;
     let comparisonCount = 0;
@@ -100,22 +86,16 @@ export function furthestFrom(this: ColorRouter, paletteName: string): string {
   return furthestColor;
 }
 
-/**
- * Renderer functions for different output formats
- */
 export const furthestFromRenderers: Record<string, FunctionRenderer> = {
   'css-variables': (_args: any[]): string => {
-    // CSS doesn't have native furthest-from function, use computed value
     return '';
   },
 
   scss: (_args: any[]): string => {
-    // SCSS doesn't have native furthest-from function, use computed value
     return '';
   },
 
   json: (_args: any[]): string => {
-    // For JSON, always use computed values
     return '';
   },
 };

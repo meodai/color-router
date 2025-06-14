@@ -1,22 +1,14 @@
 import { PaletteConfig, ColorDefinition, LogCallback } from './types';
 import { PaletteError, CircularDependencyError } from './errors';
-import { ColorRouter } from './ColorRouter'; // Full ColorRouter for internal methods
+import { ColorRouter } from './ColorRouter';
 
-/**
- * Manages palette configurations and operations within the ColorRouter system.
- * This class is intended to be instantiated and used by ColorRouter.
- */
 export class PaletteManager {
   private palettes = new Map<string, PaletteConfig>();
-  private definitions: Map<string, ColorDefinition>; // Reference to ColorRouter's definitions
+  private definitions: Map<string, ColorDefinition>;
   private logCallback?: LogCallback;
-  private colorRouter: ColorRouter; // To call define, getDefinitionForKey, getAllKeysForPalette
+  private colorRouter: ColorRouter;
 
-  constructor(
-    definitions: Map<string, ColorDefinition>,
-    colorRouter: ColorRouter, // Pass the ColorRouter instance
-    logCallback?: LogCallback,
-  ) {
+  constructor(definitions: Map<string, ColorDefinition>, colorRouter: ColorRouter, logCallback?: LogCallback) {
     this.definitions = definitions;
     this.colorRouter = colorRouter;
     this.logCallback = logCallback;
@@ -26,18 +18,24 @@ export class PaletteManager {
     this.logCallback = callback;
   }
 
-  public createPalette(name: string, options: { extends?: string; overrides?: Record<string, any> } = {}): void {
-    const { extends: basePalette, overrides = {} } = options;
+  public createPalette(
+    name: string,
+    options: { extends?: string; overrides?: Record<string, any>; description?: string } = {},
+  ): void {
+    const { extends: basePalette, overrides = {}, description } = options;
     if (this.palettes.has(name)) throw new PaletteError(`Palette "${name}" already exists.`);
     if (basePalette && !this.palettes.has(basePalette)) {
       throw new PaletteError(`Base palette "${basePalette}" does not exist.`);
     }
-    this.palettes.set(name, { extends: basePalette, overrides });
+    this.palettes.set(name, { extends: basePalette, overrides, description }); // Include description
     if (this.logCallback) {
-      this.logCallback(`Palette '${name}' created${basePalette ? ` extending '${basePalette}'` : ''}.`);
+      let logMessage = `Palette '${name}' created`;
+      if (basePalette) logMessage += ` extending '${basePalette}'`;
+      if (description) logMessage += ` with description "${description}"`;
+      logMessage += '.';
+      this.logCallback(logMessage);
     }
 
-    // Apply overrides if provided - uses ColorRouter's define method
     if (basePalette && Object.keys(overrides).length > 0) {
       for (const [key, value] of Object.entries(overrides)) {
         this.colorRouter.define(`${name}.${key}`, value);
@@ -45,8 +43,13 @@ export class PaletteManager {
     }
   }
 
-  public extendPalette(name: string, basePalette: string, overrides: Record<string, any> = {}): void {
-    this.createPalette(name, { extends: basePalette, overrides });
+  public extendPalette(
+    name: string,
+    basePalette: string,
+    overrides: Record<string, any> = {},
+    description?: string,
+  ): void {
+    this.createPalette(name, { extends: basePalette, overrides, description });
   }
 
   public copyPalette(sourceName: string, targetName: string): void {
@@ -57,23 +60,22 @@ export class PaletteManager {
       throw new PaletteError(`Target palette "${targetName}" already exists.`);
     }
 
-    const sourceKeys = this.getAllKeysForPalette(sourceName); // Changed: Use own method
-    this.createPalette(targetName); // Creates an empty palette config
+    const sourceConfig = this.palettes.get(sourceName);
+    const sourceKeys = this.getAllKeysForPalette(sourceName);
+    // Preserve description when copying
+    this.createPalette(targetName, { description: sourceConfig?.description });
 
     for (const key of sourceKeys) {
       const definition = this.colorRouter.getDefinitionForKey(key);
-      // key from getAllKeysForPalette is already like `sourceName.actualKey`
-      // We need to define it as `targetName.actualKey`
       this.colorRouter.define(`${targetName}.${key.substring(sourceName.length + 1)}`, definition);
     }
     if (this.logCallback) this.logCallback(`Copied palette '${sourceName}' to '${targetName}'.`);
   }
 
   public deletePalette(name: string): string[] {
-    // Returns keys that were part of the palette
     if (!this.palettes.has(name)) throw new PaletteError(`Palette "${name}" does not exist.`);
 
-    const keysToDelete = this.getAllKeysForPalette(name); // Changed: Use own method
+    const keysToDelete = this.getAllKeysForPalette(name);
     this.palettes.delete(name);
     if (this.logCallback) this.logCallback(`Deleted palette '${name}'.`);
     return keysToDelete;
@@ -91,11 +93,6 @@ export class PaletteManager {
     return Array.from(this.palettes.entries()).map(([name, config]) => ({ name, config }));
   }
 
-  /**
-   * Retrieves all fully qualified color keys belonging to a specific palette,
-   * considering its inheritance hierarchy.
-   * This method relies on ColorRouter's definitions map for checking actual color definitions.
-   */
   public getAllKeysForPalette(paletteName: string): string[] {
     const keys = new Set<string>();
     let current: string | undefined = paletteName;
@@ -115,7 +112,6 @@ export class PaletteManager {
 
     for (const pName of paletteStack) {
       const prefix = `${pName}.`;
-      // Iterate over ColorRouter's definitions to find keys belonging to this palette in the hierarchy
       for (const key of this.definitions.keys()) {
         if (key.startsWith(prefix)) {
           const actualKey = key.substring(prefix.length);

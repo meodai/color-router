@@ -7,15 +7,14 @@ import type { FunctionRenderer } from '../ColorRenderer';
  * @param this The ColorRouter instance.
  * @param targetColorValue The target color (e.g., 'red', '#FF0000').
  * @param paletteName The name of the palette to search within.
- * @param _options Optional additional parameters (currently ignored).
+ * @param _options Optional additional parameters.
  * @returns The hex string of the closest color found in the palette, or transparent black if errors occur.
  */
 export function closestColor(
   this: ColorRouter,
   targetColorValue: string,
   paletteName: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  ..._options: any[] // Allows for extra parameters like the '0' in the example
+  ..._options: any[]
 ): string {
   if (typeof targetColorValue !== 'string') {
     console.error('[closestColor] targetColorValue must be a string.');
@@ -42,31 +41,23 @@ export function closestColor(
   }
 
   if (!paletteKeys || paletteKeys.length === 0) {
-    // This isn't necessarily an error, the palette might be legitimately empty.
-    // Depending on desired behavior, could return targetColorValue or a specific default.
-    // console.warn(`[closestColor] No keys found for palette: ${paletteName}`);
     return '#00000000';
   }
 
   let closestColorHex = '';
   let minDifference = Infinity;
 
-  // Using 'lab' for differenceEuclidean is a common choice for perceptual distance.
-  // For higher accuracy, deltaE2000 could be used if available and preferred.
-  // const differenceFn = differenceDeltaE2000; // If using culori/fn for deltaE2000
-  const differenceFn = differenceEuclidean('rgb'); // Or 'lab' for better perceptual results: differenceEuclidean('lab')
+  const differenceFn = differenceEuclidean('rgb');
 
   for (const key of paletteKeys) {
-    const paletteColorValue = this.resolve(key); // Already returns a normalized hex or 'invalid'
+    const paletteColorValue = this.resolve(key);
 
     if (!paletteColorValue || paletteColorValue === 'invalid') {
-      // console.warn(`[closestColor] Skipping invalid color for key ${key} in palette ${paletteName}`);
       continue;
     }
 
     const paletteColorParsed = parse(paletteColorValue);
     if (!paletteColorParsed) {
-      // console.warn(`[closestColor] Could not parse palette color value: ${paletteColorValue} for key ${key}`);
       continue;
     }
 
@@ -74,7 +65,7 @@ export function closestColor(
       const difference = differenceFn(targetColorParsed, paletteColorParsed);
       if (difference < minDifference) {
         minDifference = difference;
-        closestColorHex = paletteColorValue; // This is already a hex string from resolve()
+        closestColorHex = paletteColorValue;
       }
     } catch (e) {
       // console.error(`[closestColor] Error calculating difference for ${targetColorValue} and ${paletteColorValue}:`, e);
@@ -82,8 +73,7 @@ export function closestColor(
   }
 
   if (minDifference === Infinity) {
-    // console.warn(`[closestColor] No comparable colors found in palette '${paletteName}' for target '${targetColorValue}'.`);
-    return '#00000000'; // Fallback if no valid colors were compared
+    return '#00000000';
   }
 
   return closestColorHex;
@@ -94,17 +84,14 @@ export function closestColor(
  */
 export const closestColorRenderers: Record<string, FunctionRenderer> = {
   'css-variables': (_args: any[]): string => {
-    // CSS doesn't have native closest-color function, use computed value
     return '';
   },
 
   scss: (_args: any[]): string => {
-    // SCSS doesn't have native closest-color function, use computed value
     return '';
   },
 
   json: (_args: any[]): string => {
-    // For JSON, always use computed values
     return '';
   },
 };

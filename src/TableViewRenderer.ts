@@ -1,6 +1,3 @@
-// TableView renderer for circular color palette layouts
-// Adapted from paletter's tableView.mjs
-
 export interface TableItem {
   w: number;
   h: number;
@@ -42,14 +39,8 @@ export interface TableViewOptions {
   itemPadding?: [number, number];
 }
 
-/**
- * Calculate diagonal of a rectangle
- */
 const diagonal = (rect: { w: number; h: number }): number => Math.sqrt(Math.pow(rect.w, 2) + Math.pow(rect.h, 2));
 
-/**
- * Arranges rectangles around a circle
- */
 export const tableView = (sizes: TableItem[], options: TableViewOptions = {}): TableViewResult => {
   const { gap = 0, useMaxDiagonal = true, padding = 0.2 } = options;
 
@@ -89,7 +80,6 @@ export const tableView = (sizes: TableItem[], options: TableViewOptions = {}): T
   tableBoundingRect.centerX = tableBoundingRect.w / 2;
   tableBoundingRect.centerY = tableBoundingRect.h / 2;
 
-  // Calculate each diagonal's center in percent
   const centersPercent: number[] = [];
 
   tableItems.reduce((rem, item) => {
@@ -125,9 +115,6 @@ export const tableView = (sizes: TableItem[], options: TableViewOptions = {}): T
   };
 };
 
-/**
- * Create a table item from a palette
- */
 export const createTableItemFromPalette = (
   title: string,
   colors: Record<string, string>,

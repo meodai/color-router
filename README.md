@@ -88,7 +88,9 @@ npm run dev  # Start development server
 - **Full TypeScript Support**: Complete type definitions for all APIs.
 
 ### Built-in Functions
+
 (Briefly list key functions, refer to specs.md for full signatures)
+
 - `bestContrastWith(colorKey, paletteNameOrFallbackArray)`
 - `colorMix(color1Key, color2Key, ratio, colorSpace?)`
 - `lighten(colorKey, amount)`
