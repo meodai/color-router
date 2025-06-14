@@ -12,48 +12,51 @@ export function parseDemoInput(inputValue: string, router: ColorRouter): ColorDe
   const value = inputValue.trim();
 
   // Match 'ref("...")' or ref('...')
-  const refMatch = value.match(/ref\((['"])(.*?)\2\)/);
+  const refMatch = value.match(/ref\((['"])(.*?)\1\)/);
 
   // Match func("name", arg1, arg2, ...) or func('name', arg1, arg2, ...)
   // This is a general matcher. Specific function matchers below will take precedence.
-  const funcMatchGeneral = value.match(/func\((['"])(.*?)\2(?:,\s*(.*))?\)/);
+  const funcMatchGeneral = value.match(/func\((['"])(.*?)\1(?:,\s*(.*))?\)/);
 
   // Specific function matches:
   // bestContrastWith('color1', 'color2'?)
-  const bestContrastMatch = value.match(/bestContrastWith\((['"])(.*?)\2(?:,\s*(['"])(.*?)\4)?\)/);
+  const bestContrastMatch = value.match(/bestContrastWith\((['"])(.*?)\1(?:,\s*(['"])(.*?)\3)?\)/);
 
   // colorMix('color1', 'color2', ratio?, 'space'?)
   const colorMixMatch = value.match(
-    /colorMix\((['"])(.*?)\2,\s*(['"])(.*?)\4(?:,\s*(['"]?([\d.%]+)['"]?))?(?:,\s*(['"])(.*?)\8)?\)/,
+    /colorMix\('([^']+)',\s*'([^']+)'(?:,\s*([\d.%]+))?(?:,\s*'([^']+)')?\)/,
   );
 
   // relativeTo('baseColor', 'colorSpace', [{modifications}] or {modifications})
   const relativeToMatch = value.match(/relativeTo\(\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*(\[.*?\]|\{.*?\})\s*\)/) ||
                            value.match(/relativeTo\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*(\[.*?\]|\{.*?\})\s*\)/);
 
-  // minContrastWith('baseColor', ratio?)
-  const minContrastMatch = value.match(/minContrastWith\((['"])(.*?)\2(?:,\s*([\d.]+))?\)/);
+  // minContrastWith('baseColor', 'paletteName'?, ratio?)
+  const minContrastMatch = value.match(/minContrastWith\((['"])(.*?)\1(?:,\s*(['"])(.*?)\3)?(?:,\s*([\d.]+))?\)/);
 
   // lighten('color', amount)
-  const lightenMatch = value.match(/lighten\((['"])(.*?)\2,\s*([\d.]+)\)/);
+  const lightenMatch = value.match(/lighten\((['"])(.*?)\1,\s*([\d.]+)\)/);
 
   // darken('color', amount)
-  const darkenMatch = value.match(/darken\((['"])(.*?)\2,\s*([\d.]+)\)/);
+  const darkenMatch = value.match(/darken\((['"])(.*?)\1,\s*([\d.]+)\)/);
 
   // furthestFrom('color1', 'color2'?)
-  const furthestFromMatch = value.match(/furthestFrom\((['"])(.*?)\2(?:,\s*(['"])(.*?)\4)?\)/);
+  const furthestFromMatch = value.match(/furthestFrom\((['"])(.*?)\1(?:,\s*(['"])(.*?)\3)?\)/);
+
+  // closestColor('targetColor', 'paletteName')
+  const closestColorMatch = value.match(/closestColor\((['"])(.*?)\1,\s*(['"])(.*?)\3\)/);
 
   if (refMatch) {
-    return router.ref(refMatch[3]);
+    return router.ref(refMatch[2]);
   } else if (bestContrastMatch) {
     const args: string[] = [bestContrastMatch[2]];
     if (bestContrastMatch[4]) args.push(bestContrastMatch[4]);
     return router.func('bestContrastWith', ...args);
   } else if (colorMixMatch) {
-    const color1 = colorMixMatch[2];
-    const color2 = colorMixMatch[4];
-    let ratio = colorMixMatch[6] || '0.5'; // group 6 is the ratio number
-    const colorSpace = colorMixMatch[8] || 'lab'; // group 8 is the color space
+    const color1 = colorMixMatch[1];
+    const color2 = colorMixMatch[2];
+    let ratio = colorMixMatch[3] || '0.5';
+    const colorSpace = colorMixMatch[4] || 'lab';
 
     ratio = ratio.replace(/['"]/g, '');
     if (ratio.includes('%')) {
@@ -76,8 +79,10 @@ export function parseDemoInput(inputValue: string, router: ColorRouter): ColorDe
     }
   } else if (minContrastMatch) {
     const baseColor = minContrastMatch[2];
-    const ratio = minContrastMatch[3] ? parseFloat(minContrastMatch[3]) : undefined;
-    return router.func('minContrastWith', baseColor, ratio);
+    const paletteName = minContrastMatch[4] || undefined;
+    const ratio = minContrastMatch[5] ? parseFloat(minContrastMatch[5]) : undefined;
+    const args = [baseColor, paletteName, ratio].filter(arg => arg !== undefined);
+    return router.func('minContrastWith', ...args);
   } else if (lightenMatch) {
     return router.func('lighten', lightenMatch[2], parseFloat(lightenMatch[3]));
   } else if (darkenMatch) {
@@ -86,6 +91,10 @@ export function parseDemoInput(inputValue: string, router: ColorRouter): ColorDe
     const args: string[] = [furthestFromMatch[2]];
     if (furthestFromMatch[4]) args.push(furthestFromMatch[4]);
     return router.func('furthestFrom', ...args);
+  } else if (closestColorMatch) {
+    const targetColor = closestColorMatch[2];
+    const paletteName = closestColorMatch[4];
+    return router.func('closestColor', targetColor, paletteName);
   } else if (funcMatchGeneral) {
     const funcName = funcMatchGeneral[2];
     const funcArgsStr = funcMatchGeneral[3];

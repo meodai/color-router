@@ -252,7 +252,13 @@ document.getElementById('define-color')?.addEventListener('click', () => {
 
   try {
     const colorDefinition = parseDemoInput(valueInput.value, router);
-    router.set(keyInput.value, colorDefinition);
+    
+    // Use define for new colors, set for existing ones
+    if (router.has(keyInput.value)) {
+      router.set(keyInput.value, colorDefinition);
+    } else {
+      router.define(keyInput.value, colorDefinition);
+    }
 
     // Clear inputs after successful definition
     // keyInput.value = ''; // Optional: clear key as well
