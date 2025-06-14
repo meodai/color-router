@@ -15,6 +15,7 @@ export interface ConnectionPoint {
   isLeft: boolean;
   color: string;
   colorName: string;
+  isPaletteNode?: boolean; // Added to identify palette nodes
 }
 
 export interface Connection {
@@ -104,24 +105,47 @@ export class SVGRenderer extends ColorRenderer {
     const allConnectionPoints: Record<string, ConnectionPoint> = {};
 
     tableItems.forEach((tableItem) => {
-      if (!tableItem.title || !tableItem.colors || !tableItem.topPositions) return;
+      if (!tableItem.title || !tableItem.colors || !tableItem.topPositions || !tableItem.topPositions[tableItem.title]) return;
 
+      // Create connection points for individual colors in the palette table
       Object.keys(tableItem.colors).forEach((colorKey) => {
         const fullKey = `${tableItem.title}.${colorKey}`;
         const position = tableItem.topPositions![colorKey];
-        const isLeft = tableItem.left! < tableBoundingRect.centerX;
-        const pointX = isLeft ? tableItem.left! + tableItem.w : tableItem.left!;
+        const isColorRowOnLeftHalfOfDiagram = tableItem.left! < tableBoundingRect.centerX; // This refers to the table's position
+        const pointX = isColorRowOnLeftHalfOfDiagram ? tableItem.left! + tableItem.w : tableItem.left!;
         const pointY = position.rectTop + position.height / 2 + tableItem.top!;
 
         allConnectionPoints[fullKey] = {
           key: fullKey,
           x: pointX,
           y: pointY,
-          isLeft,
+          isLeft: isColorRowOnLeftHalfOfDiagram, // Curve direction based on table's half
           color: tableItem.colors![colorKey] || '#000000',
           colorName: colorKey,
+          isPaletteNode: false,
         };
       });
+
+      // Create a connection point for the palette itself, on its header edge
+      const paletteKey = `palette:${tableItem.title}`;
+      const headerPosition = tableItem.topPositions[tableItem.title];
+      // Determine if the table (and thus its header) is on the left or right half of the diagram center.
+      // This is crucial for the 'isLeft' property which dictates connection curve direction.
+      const isPaletteTableOnLeftHalfOfDiagram = tableItem.left! + tableItem.w / 2 < tableBoundingRect.centerX;
+      
+      // The dot is placed on the exact edge of the header, like individual color dots.
+      const paletteNodeX = isPaletteTableOnLeftHalfOfDiagram ? tableItem.left! + tableItem.w : tableItem.left!;
+      const paletteNodeY = tableItem.top! + headerPosition.rectTop + headerPosition.height / 2;
+
+      allConnectionPoints[paletteKey] = {
+        key: paletteKey,
+        x: paletteNodeX, // Dot is centered on the header edge line
+        y: paletteNodeY, 
+        isLeft: isPaletteTableOnLeftHalfOfDiagram, // Curve direction based on table's half
+        color: '#888888', // Distinct color for palette node dots/lines (can be same as header bg or contrasting)
+        colorName: tableItem.title,
+        isPaletteNode: true, 
+      };
     });
 
     return allConnectionPoints;
@@ -135,17 +159,21 @@ export class SVGRenderer extends ColorRenderer {
     const processedConnections = new Set<string>();
 
     Object.keys(connectionPoints).forEach((key) => {
-      const dependencies = router.getDependencies(key);
+      // Skip trying to find dependencies *from* a palette node itself directly in this loop
+      // Connections *to* palette nodes are handled when processing color keys.
+      if (connectionPoints[key].isPaletteNode) return;
+
+      const visualDependencies = router.getVisualDependencies(key); // Use getVisualDependencies
       const fromPoint = connectionPoints[key];
 
       if (fromPoint) {
-        dependencies.forEach((depKey) => {
+        visualDependencies.forEach((depKey) => {
           const toPoint = connectionPoints[depKey];
           if (toPoint) {
             const connectionId = `${key}->${depKey}`;
-            const reverseConnectionId = `${depKey}->${key}`;
+            // No need to check reverse for visual graph, as it's directed
             
-            if (!processedConnections.has(connectionId) && !processedConnections.has(reverseConnectionId)) {
+            if (!processedConnections.has(connectionId)) {
               connections.push({ from: fromPoint, to: toPoint });
               processedConnections.add(connectionId);
             }
@@ -167,13 +195,14 @@ export class SVGRenderer extends ColorRenderer {
 
     const backgroundPaths = connections.map((connection) => {
       const { from, to } = connection;
+      // Lines connect directly to the center of the 'to' dot (to.x, to.y)
       const yDiff = Math.abs(from.y - to.y);
       const amp = 40 + (yDiff * 0.3);
       const path = `M ${from.x} ${from.y} C ${
         from.x + (from.isLeft ? amp : -amp)
       } ${from.y}, ${
-        to.x + (to.isLeft ? amp : -amp)
-      } ${to.y}, ${to.x} ${to.y}`;
+        to.x + (to.isLeft ? amp : -amp) // Control point uses 'to.isLeft' for curve direction
+      } ${to.y}, ${to.x} ${to.y}`; // Line terminates at to.x, to.y
 
       return `<path d="${path}" stroke="#000" stroke-width="${strokeWidth + 1.5}" fill="none" />`;
     }).join('');
@@ -196,16 +225,17 @@ export class SVGRenderer extends ColorRenderer {
       <g class="connections">${colorPaths}</g>
     `;
   }
-
-  /**
-   * Generate SVG dots for connection points
-   */
+  
   #generateDots(connectionPoints: Record<string, ConnectionPoint>): string {
     const { dotRadius = 5 } = this.#options;
 
     const dots = Object.values(connectionPoints).map((point) => {
-      return `<circle cx="${point.x}" cy="${point.y}" r="${dotRadius}" 
-        fill="${point.color}" stroke="black" stroke-width="1" 
+      const radius = dotRadius; // All dots are the same radius
+      const fillColor = point.isPaletteNode ? '#FFFFFF' : point.color; // Palette header dots are white, others use their color
+      const strokeColor = point.isPaletteNode ? '#555' : 'black'; // Can differentiate stroke if needed
+      
+      return `<circle cx="${point.x}" cy="${point.y}" r="${radius}" 
+        fill="${fillColor}" stroke="${strokeColor}" stroke-width="1" 
         data-color="${point.color}" data-key="${point.key}" />`;
     }).join('');
 
@@ -289,6 +319,11 @@ export class SVGRenderer extends ColorRenderer {
         .dots circle:hover {
           stroke-width: 2;
           r: ${(this.#options.dotRadius || 5) + 1};
+        }
+        /* Style for palette node text */
+        .dots text {
+          font-family: monospace;
+          pointer-events: none; /* So text doesn't interfere with circle hover/click */
         }
       </style>
     `;

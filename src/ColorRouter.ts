@@ -39,7 +39,8 @@ export class ColorFunction {
   constructor(
     public readonly fn: (...args: any[]) => string,
     public readonly args: any[],
-    public readonly dependencies: string[]
+    public readonly dependencies: string[], // For resolution logic
+    public readonly visualDependencies: string[] // For visualization. Guaranteed to be populated by func.
   ) {}
   
   execute(resolver: ColorRouter): string {
@@ -116,35 +117,57 @@ export class ColorRouter {
 
   func(name: string, ...args: any[]): ColorFunction {
     if (!this.#customFunctions.has(name)) {
-      throw new PaletteError(`Custom function \"${name}\" is not registered.`);
+      throw new PaletteError(`Custom function \\"${name}\\" is not registered.`);
     }
     const implementation = this.#customFunctions.get(name)!;
     
-    const dependencySet = new Set<string>();
+    const resolutionDependencySet = new Set<string>();
+    const visualDependencySet = new Set<string>();
 
-    // Add explicit color key dependencies (e.g., "palette.color")
+    // Common logic for direct color key arguments
     args.forEach(arg => {
-      if (typeof arg === 'string' && arg.includes('.')) {
-        dependencySet.add(arg);
+      if (typeof arg === 'string' && arg.includes('.')) { // e.g., "palette.color"
+        resolutionDependencySet.add(arg);
+        visualDependencySet.add(arg); 
       }
     });
     
-    // Enhanced dependency detection for palette-aware functions
     if (this.#paletteAwareFunctions.has(name)) {
       for (const arg of args) {
-        // Check if the argument is a string, does not contain a dot (i.e., not a specific color key),
-        // and matches an existing palette name.
-        if (typeof arg === 'string' && !arg.includes('.') && this.#palettes.has(arg)) {
+        if (typeof arg === 'string' && !arg.includes('.') && this.#palettes.has(arg)) { // arg is a palette name
+          // For resolution, add all individual keys from the palette
           const paletteKeys = this.getAllKeysForPalette(arg);
           for (const pKey of paletteKeys) {
-            dependencySet.add(pKey);
+            resolutionDependencySet.add(pKey);
           }
+          // For visual, add the summarized palette dependency
+          visualDependencySet.add(`palette:${arg}`); 
         }
+        // Other argument types (literals like numbers, hex colors, or non-palette string names)
+        // or already handled direct color keys do not add further dependencies here.
       }
     }
+    // If not palette-aware, visualDependencySet currently only contains direct color refs from the initial loop.
+    // ResolutionDependencySet also contains these.
     
-    const finalDependencies = Array.from(dependencySet);
-    return new ColorFunction(implementation, args, finalDependencies);
+    const finalResolutionDependencies = Array.from(resolutionDependencySet);
+    let finalVisualDependenciesArray = Array.from(visualDependencySet);
+
+    // If visual set is empty (no palette summarization occurred and no direct color refs were args) 
+    // OR if it only contains a subset of resolution deps (e.g. palette aware func without palette args but with color key args),
+    // we need to ensure it's correctly representing the visual aspect.
+    // The current logic:
+    // - Direct color keys are added to both visual and resolution.
+    // - Palette-aware functions add `palette:name` to visual, and individual colors to resolution.
+    // If finalVisualDependenciesArray is empty but finalResolutionDependencies is not,
+    // it means all dependencies were direct color refs and the function was not palette-aware,
+    // or it was palette-aware but only took direct color refs. In this case, visual should mirror resolution.
+    if (finalVisualDependenciesArray.length === 0 && finalResolutionDependencies.length > 0) {
+        finalVisualDependenciesArray = finalResolutionDependencies;
+    }
+    // If both are empty (e.g. a function like lighten('#fff', 0.1)), visualDependencies will be an empty array. Correct.
+
+    return new ColorFunction(implementation, args, finalResolutionDependencies, finalVisualDependenciesArray);
   }
 
   // --- PALETTE MANAGEMENT ---
@@ -499,7 +522,24 @@ export class ColorRouter {
     return Array.from(this.#palettes.entries()).map(([name, config]) => ({ name, config }));
   }
 
-  getAllKeysForPalette(paletteName: string): string[] {
+  // Method for SVGRenderer to get dependencies suitable for visualization
+  public getVisualDependencies(key: string): Set<string> {
+    const definition = this.#getDefinition(key); // This gets the ColorDefinition
+
+    if (definition instanceof ColorFunction) {
+      // visualDependencies is guaranteed to be populated by func,
+      // either with specific visual deps or a copy of resolution deps.
+      return new Set(definition.visualDependencies); 
+    } 
+    if (definition instanceof ColorReference) {
+      // A reference's visual dependency is the key it points to.
+      return new Set([definition.key]);
+    }
+    // Direct color values have no dependencies.
+    return new Set<string>();
+  }
+
+  getAllKeysForPalette(paletteName: string): string[] { // Ensure this is public or accessible if not already
     return this.#getAllPaletteKeys(paletteName);
   }
 
