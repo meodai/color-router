@@ -1,114 +1,144 @@
-import { ColorRouter } from '../src/router';
+import { TokenEngine } from '../src/engine/TokenEngine';
 import { ColorDefinition } from '../src/types';
+import { ref, val, func } from '../src/system'; // Import namespaced token helpers
 
 /**
  * Parses the color definition string from the demo input field.
+ * Supports the new Design System token syntax with typed value tokens.
  * @param inputValue The raw string value from the input field.
- * @param router The ColorRouter instance to create refs or function calls.
+ * @param engine The TokenEngine instance to create refs or function calls.
  * @returns The parsed color definition.
  * @throws Error if the input string is invalid or parsing fails.
  */
-export function parseDemoInput(inputValue: string, router: ColorRouter): ColorDefinition | string {
+export function parseDemoInput(inputValue: string, engine: TokenEngine): ColorDefinition | string {
   const value = inputValue.trim();
+
+  // Design System token syntax matches - namespaced version
+  
+  // Color tokens
+  const hexMatch = value.match(/val\.color\.hex\((['"])(.*?)\1\)/);
+  const lchMatch = value.match(/val\.color\.lch\((['"])(.*?)\1\)/);
+  const oklchMatch = value.match(/val\.color\.oklch\((['"])(.*?)\1\)/);
+  const cssMatch = value.match(/val\.color\.css\((['"])(.*?)\1\)/);
+  const rgbMatch = value.match(/val\.color\.rgb\((['"])(.*?)\1\)/);
+  const hslMatch = value.match(/val\.color\.hsl\((['"])(.*?)\1\)/);
+  const labMatch = value.match(/val\.color\.lab\((['"])(.*?)\1\)/);
+  const oklabMatch = value.match(/val\.color\.oklab\((['"])(.*?)\1\)/);
+  
+  // Size tokens  
+  const sizePxMatch = value.match(/val\.size\.px\((\d+(?:\.\d+)?)\)/);
+  const sizeRemMatch = value.match(/val\.size\.rem\((\d+(?:\.\d+)?)\)/);
+  const sizeEmMatch = value.match(/val\.size\.em\((\d+(?:\.\d+)?)\)/);
+  const sizePercentMatch = value.match(/val\.size\.percent\((\d+(?:\.\d+)?)\)/);
+  const sizeVwMatch = value.match(/val\.size\.vw\((\d+(?:\.\d+)?)\)/);
+  const sizeVhMatch = value.match(/val\.size\.vh\((\d+(?:\.\d+)?)\)/);
+  
+  // Space tokens
+  const spacePxMatch = value.match(/val\.space\.px\((\d+(?:\.\d+)?)\)/);
+  const spaceRemMatch = value.match(/val\.space\.rem\((\d+(?:\.\d+)?)\)/);
+  const spaceEmMatch = value.match(/val\.space\.em\((\d+(?:\.\d+)?)\)/);
+  const spacePercentMatch = value.match(/val\.space\.percent\((\d+(?:\.\d+)?)\)/);
+  
+  // Font tokens
+  const fontFamilyMatch = value.match(/val\.font\.family\((['"])(.*?)\1\)/);
+  const fontSizeMatch = value.match(/val\.font\.size\((['"])(.*?)\1\)/);
+  const fontWeightMatch = value.match(/val\.font\.weight\((['"])(.*?)\1\)/);
+  const fontStyleMatch = value.match(/val\.font\.style\((['"])(.*?)\1\)/);
+
+  // Namespaced function syntax
+  const funcBestContrastMatch = value.match(/func\.color\.bestContrastWith\((['"])(.*?)\1(?:,\s*(['"])(.*?)\3)?\)/);
+  const funcMixMatch = value.match(/func\.color\.mix\('([^']+)',\s*'([^']+)'(?:,\s*([\d.%]+))?(?:,\s*'([^']+)')?\)/);
+  const funcLightenMatch = value.match(/func\.color\.lighten\((['"])(.*?)\1,\s*([\d.]+)\)/);
+  const funcDarkenMatch = value.match(/func\.color\.darken\((['"])(.*?)\1,\s*([\d.]+)\)/);
+  const funcRelativeToMatch = value.match(/func\.color\.relativeTo\(\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*(\[.*?\]|\{.*?\})\s*\)/) ||
+                               value.match(/func\.color\.relativeTo\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*(\[.*?\]|\{.*?\})\s*\)/);
+  const funcMinContrastMatch = value.match(/func\.color\.minContrastWith\((['"])(.*?)\1(?:,\s*(['"])(.*?)\3)?(?:,\s*([\d.]+))?\)/);
+  const funcFurthestFromMatch = value.match(/func\.color\.furthestFrom\((['"])(.*?)\1(?:,\s*(['"])(.*?)\3)?\)/);
+  const funcClosestColorMatch = value.match(/func\.color\.closestColor\((['"])(.*?)\1,\s*(['"])(.*?)\3\)/);
 
   // Match 'ref("...")' or ref('...')
   const refMatch = value.match(/ref\((['"])(.*?)\1\)/);
 
-  // Match func("name", arg1, arg2, ...) or func('name', arg1, arg2, ...)
-  // This is a general matcher. Specific function matchers below will take precedence.
-  const funcMatchGeneral = value.match(/func\((['"])(.*?)\1(?:,\s*(.*))?\)/);
-
-  // Specific function matches:
-  // bestContrastWith('color1', 'color2'?)
-  const bestContrastMatch = value.match(/bestContrastWith\((['"])(.*?)\1(?:,\s*(['"])(.*?)\3)?\)/);
-
-  // colorMix('color1', 'color2', ratio?, 'space'?)
-  const colorMixMatch = value.match(
-    /colorMix\('([^']+)',\s*'([^']+)'(?:,\s*([\d.%]+))?(?:,\s*'([^']+)')?\)/,
-  );
-
-  // relativeTo('baseColor', 'colorSpace', [{modifications}] or {modifications})
-  const relativeToMatch = value.match(/relativeTo\(\s*'([^']+)'\s*,\s*'([^']+)'\s*,\s*(\[.*?\]|\{.*?\})\s*\)/) ||
-                           value.match(/relativeTo\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*(\[.*?\]|\{.*?\})\s*\)/);
-
-  // minContrastWith('baseColor', 'paletteName'?, ratio?)
-  const minContrastMatch = value.match(/minContrastWith\((['"])(.*?)\1(?:,\s*(['"])(.*?)\3)?(?:,\s*([\d.]+))?\)/);
-
-  // lighten('color', amount)
-  const lightenMatch = value.match(/lighten\((['"])(.*?)\1,\s*([\d.]+)\)/);
-
-  // darken('color', amount)
-  const darkenMatch = value.match(/darken\((['"])(.*?)\1,\s*([\d.]+)\)/);
-
-  // furthestFrom('color1', 'color2'?)
-  const furthestFromMatch = value.match(/furthestFrom\((['"])(.*?)\1(?:,\s*(['"])(.*?)\3)?\)/);
-
-  // closestColor('targetColor', 'paletteName')
-  const closestColorMatch = value.match(/closestColor\((['"])(.*?)\1,\s*(['"])(.*?)\3\)/);
-
-  if (refMatch) {
-    return router.ref(refMatch[2]);
-  } else if (bestContrastMatch) {
-    const args: string[] = [bestContrastMatch[2]];
-    if (bestContrastMatch[4]) args.push(bestContrastMatch[4]);
-    return router.func('bestContrastWith', ...args);
-  } else if (colorMixMatch) {
-    const color1 = colorMixMatch[1];
-    const color2 = colorMixMatch[2];
-    let ratio = colorMixMatch[3] || '0.5';
-    const colorSpace = colorMixMatch[4] || 'lab';
+  // Handle namespaced Design System token syntax
+  
+  // Color tokens
+  if (hexMatch || lchMatch || oklchMatch || cssMatch || rgbMatch || hslMatch || labMatch || oklabMatch) {
+    const match = hexMatch || lchMatch || oklchMatch || cssMatch || rgbMatch || hslMatch || labMatch || oklabMatch;
+    return match![2]; // Return the color value directly (ColorDefinition)
+  } 
+  // Size tokens
+  else if (sizePxMatch || sizeRemMatch || sizeEmMatch || sizePercentMatch || sizeVwMatch || sizeVhMatch) {
+    const match = sizePxMatch || sizeRemMatch || sizeEmMatch || sizePercentMatch || sizeVwMatch || sizeVhMatch;
+    const numValue = parseFloat(match![1]);
+    if (sizePxMatch) return `${numValue}px`;
+    if (sizeRemMatch) return `${numValue}rem`;
+    if (sizeEmMatch) return `${numValue}em`;
+    if (sizePercentMatch) return `${numValue}%`;
+    if (sizeVwMatch) return `${numValue}vw`;
+    if (sizeVhMatch) return `${numValue}vh`;
+  }
+  // Space tokens
+  else if (spacePxMatch || spaceRemMatch || spaceEmMatch || spacePercentMatch) {
+    const match = spacePxMatch || spaceRemMatch || spaceEmMatch || spacePercentMatch;
+    const numValue = parseFloat(match![1]);
+    if (spacePxMatch) return `${numValue}px`;
+    if (spaceRemMatch) return `${numValue}rem`;
+    if (spaceEmMatch) return `${numValue}em`;
+    if (spacePercentMatch) return `${numValue}%`;
+  }
+  // Font tokens
+  else if (fontFamilyMatch || fontSizeMatch || fontWeightMatch || fontStyleMatch) {
+    const match = fontFamilyMatch || fontSizeMatch || fontWeightMatch || fontStyleMatch;
+    return match![2]; // Return the font value directly
+  }
+  // Handle namespaced function syntax
+  else if (funcBestContrastMatch) {
+    const args: string[] = [funcBestContrastMatch[2]];
+    if (funcBestContrastMatch[4]) args.push(funcBestContrastMatch[4]);
+    return engine.select('bestContrastWith', ...args);
+  } else if (funcMixMatch) {
+    const color1 = funcMixMatch[1];
+    const color2 = funcMixMatch[2];
+    let ratio = funcMixMatch[3] || '0.5';
+    const colorSpace = funcMixMatch[4] || 'lab';
 
     ratio = ratio.replace(/['"]/g, '');
     if (ratio.includes('%')) {
       ratio = (parseFloat(ratio) / 100).toString();
     }
-    return router.func('colorMix', color1, color2, parseFloat(ratio), colorSpace);
-  } else if (relativeToMatch) {
-    const baseColor = relativeToMatch[1];  // First captured group is the base color
-    const colorSpace = relativeToMatch[2]; // Second captured group is the color space
-    const modificationsString = relativeToMatch[3]; // Third captured group is the modifications array/object
+    return engine.modify('colorMix', color1, color2, parseFloat(ratio), colorSpace);
+  } else if (funcLightenMatch) {
+    return engine.modify('lighten', funcLightenMatch[2], parseFloat(funcLightenMatch[3]));
+  } else if (funcDarkenMatch) {
+    return engine.modify('darken', funcDarkenMatch[2], parseFloat(funcDarkenMatch[3]));
+  } else if (funcRelativeToMatch) {
+    const baseColor = funcRelativeToMatch[1];
+    const colorSpace = funcRelativeToMatch[2];
+    const modificationsString = funcRelativeToMatch[3];
     try {
       let fixedModifications = modificationsString.replace(/'/g, '"');
-      // Fix common JSON issues: .number -> 0.number
       fixedModifications = fixedModifications.replace(/([^0-9]|^)\.(\d)/g, '$10.$2');
-      
       const parsedModifications = JSON.parse(fixedModifications);
-      return router.func('relativeTo', baseColor, colorSpace, parsedModifications);
+      return engine.modify('relativeTo', baseColor, colorSpace, parsedModifications);
     } catch (e) {
-      throw new Error(`Invalid modifications format for relativeTo: ${modificationsString}. Must be valid JSON array like ["+0.35", "0.2", "+120"] or object like {"l": "+0.35", "c": "0.2", "h": "+120"}. ${(e as Error).message}`);
+      throw new Error(`Invalid modifications format for func.color.relativeTo: ${modificationsString}. Must be valid JSON array like ["+0.35", "0.2", "+120"] or object like {"l": "+0.35", "c": "0.2", "h": "+120"}. ${(e as Error).message}`);
     }
-  } else if (minContrastMatch) {
-    const baseColor = minContrastMatch[2];
-    const paletteName = minContrastMatch[4] || undefined;
-    const ratio = minContrastMatch[5] ? parseFloat(minContrastMatch[5]) : undefined;
+  } else if (funcMinContrastMatch) {
+    const baseColor = funcMinContrastMatch[2];
+    const paletteName = funcMinContrastMatch[4] || undefined;
+    const ratio = funcMinContrastMatch[5] ? parseFloat(funcMinContrastMatch[5]) : undefined;
     const args = [baseColor, paletteName, ratio].filter(arg => arg !== undefined);
-    return router.func('minContrastWith', ...args);
-  } else if (lightenMatch) {
-    return router.func('lighten', lightenMatch[2], parseFloat(lightenMatch[3]));
-  } else if (darkenMatch) {
-    return router.func('darken', darkenMatch[2], parseFloat(darkenMatch[3]));
-  } else if (furthestFromMatch) {
-    const args: string[] = [furthestFromMatch[2]];
-    if (furthestFromMatch[4]) args.push(furthestFromMatch[4]);
-    return router.func('furthestFrom', ...args);
-  } else if (closestColorMatch) {
-    const targetColor = closestColorMatch[2];
-    const paletteName = closestColorMatch[4];
-    return router.func('closestColor', targetColor, paletteName);
-  } else if (funcMatchGeneral) {
-    const funcName = funcMatchGeneral[2];
-    const funcArgsStr = funcMatchGeneral[3];
-    let args: any[] = [];
-    if (funcArgsStr) {
-      // This basic CSV parsing might need improvement for args containing commas or quotes.
-      // For now, it splits by comma and trims, then tries to parse numbers.
-      args = funcArgsStr.split(/\s*,\s*/).map((arg) => {
-        const cleanedArg = arg.replace(/^['"]|['"]$/g, ''); // Remove leading/trailing quotes
-        const num = parseFloat(cleanedArg);
-        return isNaN(num) ? cleanedArg : num;
-      });
-    }
-    return router.func(funcName, ...args);
+    return engine.select('minContrastWith', ...args);
+  } else if (funcFurthestFromMatch) {
+    const args: string[] = [funcFurthestFromMatch[2]];
+    if (funcFurthestFromMatch[4]) args.push(funcFurthestFromMatch[4]);
+    return engine.select('furthestFrom', ...args);
+  } else if (funcClosestColorMatch) {
+    const targetColor = funcClosestColorMatch[2];
+    const paletteName = funcClosestColorMatch[4];
+    return engine.select('closestColor', targetColor, paletteName);
+  } else if (refMatch) {
+    return engine.ref(refMatch[2]);
   }
 
   // If no patterns match, assume it's a direct color string (e.g., hex, rgb, color name)

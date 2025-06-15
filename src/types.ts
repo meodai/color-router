@@ -30,8 +30,8 @@ export class ColorFunction {
   constructor(
     public readonly fn: (...args: any[]) => string,
     public readonly args: any[],
-    public readonly dependencies: string[], // For resolution logic
-    public readonly visualDependencies: string[], // For visualization. Guaranteed to be populated by func.
+    public readonly dependencies: string[], // For both resolution logic and visualization
+    public readonly functionName?: string, // Store the function name for display purposes
   ) {}
 
   execute(resolver: ColorRouter): string {

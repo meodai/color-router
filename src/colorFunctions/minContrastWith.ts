@@ -1,27 +1,25 @@
 import { wcagContrast, parse } from 'culori';
-import type { ColorRouter } from '../router';
+import type { TokenEngine } from '../engine/TokenEngine';
 import type { FunctionRenderer } from '../renderers';
 
 /**
- * Finds a color from a specified palette (or black/white as a fallback) that meets a minimum WCAG contrast ratio
+ * Finds a color from a specified scope (or black/white as a fallback) that meets a minimum WCAG contrast ratio
  * against a target color. If multiple colors meet the criteria, it returns the one closest to the minimum ratio.
  * If no color meets the minimum ratio, it returns the color with the highest contrast.
- * If the palette is empty or no valid colors are found, it defaults to black or white.
+ * If the scope is empty or no valid colors are found, it defaults to black or white.
  *
- * The `this` context must be bound to a `ColorRouter` instance.
- *
- * @param this The ColorRouter instance.
+ * @param engine The TokenEngine instance to access tokens from.
  * @param targetColor The target color string (e.g., "#RRGGBB", "rgb(r,g,b)") to contrast against.
- * @param paletteName Optional. The name of the palette to search. If not provided or invalid,
- *                    defaults to checking black and white.
+ * @param scopeName Optional. The name of the scope to search. If not provided or invalid,
+ *                  defaults to checking black and white.
  * @param minRatio The minimum WCAG contrast ratio required (default is 4.5).
  * @returns The hex string of the color that meets the criteria. Returns black ("#000000") if `targetColor` is invalid
  *          or if no suitable color can be determined.
  */
-export function minContrastWith(this: ColorRouter, targetColor: string, paletteName?: string, minRatio = 4.5): string {
+export function minContrastWith(engine: TokenEngine, targetColor: string, scopeName?: string, minRatio = 4.5): string {
   if (!parse(targetColor)) return '#000000';
 
-  if (!paletteName) {
+  if (!scopeName) {
     const whiteContrast = wcagContrast('#fff', targetColor);
     const blackContrast = wcagContrast('#000', targetColor);
 
@@ -31,20 +29,9 @@ export function minContrastWith(this: ColorRouter, targetColor: string, paletteN
     return whiteContrast >= blackContrast ? '#ffffff' : '#000000';
   }
 
-  if (!this.getAllPalettes().find((p) => p.name === paletteName)) {
-    console.warn(`Palette "${paletteName}" not found, falling back to black/white`);
-    const whiteContrast = wcagContrast('#fff', targetColor);
-    const blackContrast = wcagContrast('#000', targetColor);
-
-    if (whiteContrast >= minRatio) return '#ffffff';
-    if (blackContrast >= minRatio) return '#000000';
-
-    return whiteContrast >= blackContrast ? '#ffffff' : '#000000';
-  }
-
-  const paletteKeys = this.getAllKeysForPalette(paletteName);
-  if (paletteKeys.length === 0) {
-    console.warn(`Palette "${paletteName}" has no colors, falling back to black/white`);
+  const scopeKeys = engine.getAllTokensForScope(scopeName);
+  if (scopeKeys.length === 0) {
+    console.warn(`Scope "${scopeName}" has no tokens, falling back to black/white`);
     const whiteContrast = wcagContrast('#fff', targetColor);
     const blackContrast = wcagContrast('#000', targetColor);
 
@@ -57,9 +44,9 @@ export function minContrastWith(this: ColorRouter, targetColor: string, paletteN
   let bestColor: string | null = null;
   let closestContrast = Infinity;
 
-  for (const key of paletteKeys) {
+  for (const key of scopeKeys) {
     try {
-      const candidateColor = this.resolve(key);
+      const candidateColor = engine.resolve(key);
       if (candidateColor && candidateColor !== 'invalid') {
         const contrast = wcagContrast(candidateColor, targetColor);
 
@@ -80,9 +67,9 @@ export function minContrastWith(this: ColorRouter, targetColor: string, paletteN
   let fallbackColor: string | null = null;
   let bestContrast = 0;
 
-  for (const key of paletteKeys) {
+  for (const key of scopeKeys) {
     try {
-      const candidateColor = this.resolve(key);
+      const candidateColor = engine.resolve(key);
       if (candidateColor && candidateColor !== 'invalid') {
         const contrast = wcagContrast(candidateColor, targetColor);
         if (contrast > bestContrast) {
@@ -99,9 +86,9 @@ export function minContrastWith(this: ColorRouter, targetColor: string, paletteN
     return fallbackColor;
   }
 
-  for (const key of paletteKeys) {
+  for (const key of scopeKeys) {
     try {
-      const candidateColor = this.resolve(key);
+      const candidateColor = engine.resolve(key);
       if (candidateColor && candidateColor !== 'invalid') {
         return candidateColor;
       }

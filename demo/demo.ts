@@ -1,46 +1,14 @@
 import * as culori from 'culori';
-import { ColorRouter } from '../src/router';
 import { ColorRenderer, SVGRenderer } from '../src/renderers';
-import {
-  bestContrastWithRenderers,
-  colorMixRenderers,
-  relativeToRenderers,
-  minContrastWithRenderers,
-  lightenRenderers,
-  darkenRenderers,
-  furthestFromRenderers,
-} from '../src/colorFunctions';
 import { parseDemoInput } from './demoInputParser'; // Import the new parser
+import { DesignSystem, ref, val, func, ColorValueToken, SizeValueToken, SpaceValueToken, FontValueToken } from '../src/system'; // Import the Design System API
 
-const router = new ColorRouter();
+// Create a design system instance
+const designSystem = new DesignSystem('TokenEngineDemo');
+const engine = designSystem.getEngine(); // Get the underlying engine
 
-router.setColorRenderer(ColorRenderer);
-
-function registerAllFunctionRenderers() {
-  const rendererSets = [
-    { name: 'bestContrastWith', renderers: bestContrastWithRenderers },
-    { name: 'colorMix', renderers: colorMixRenderers },
-    { name: 'relativeTo', renderers: relativeToRenderers },
-    { name: 'minContrastWith', renderers: minContrastWithRenderers },
-    { name: 'lighten', renderers: lightenRenderers },
-    { name: 'darken', renderers: darkenRenderers },
-    { name: 'furthestFrom', renderers: furthestFromRenderers },
-  ];
-
-  const formats: ('css-variables' | 'json')[] = ['css-variables', 'json'];
-
-  formats.forEach((format) => {
-    const renderer = router.createRenderer(format);
-    rendererSets.forEach(({ name, renderers }) => {
-      const formatRenderer = renderers[format];
-      if (formatRenderer) {
-        renderer.registerFunctionRenderer(name, formatRenderer);
-      }
-    });
-  });
-}
-
-registerAllFunctionRenderers();
+// TODO: Re-implement renderer system for TokenEngine architecture
+// function registerAllFunctionRenderers() - REMOVED for now
 
 function logEvent(message: string): void {
   const container = document.getElementById('event-log-container');
@@ -51,35 +19,114 @@ function logEvent(message: string): void {
   }
 }
 
-router.setLogCallback(logEvent);
+// TokenEngine doesn't have a setLogCallback method yet, we'll handle logging differently
+// engine.setLogCallback(logEvent);
+
+// Helper functions for token type detection and value conversion
+function getDefinitionType(definition: any): 'value' | 'reference' | 'function' {
+  if (!definition) return 'value';
+  if (typeof definition === 'string') return 'value';
+  
+  // Check for ColorFunction first by functionName property (most reliable)
+  if (definition.functionName && definition.args) return 'function';
+  
+  // Check for ColorReference (has Symbol.for('ColorReference'))
+  if (definition.type === Symbol.for('ColorReference')) return 'reference';
+  
+  // Check for ColorFunction (has Symbol.for('ColorFunction'))
+  if (definition.type === Symbol.for('ColorFunction')) return 'function';
+  
+  // Legacy string-based checks (for backwards compatibility)
+  if (definition.type === 'reference') return 'reference';
+  if (definition.type === 'function') return 'function';
+  
+  return 'value';
+}
+
+function valueToString(definition: any): string {
+  if (!definition) return '';
+  if (typeof definition === 'string') return definition;
+  
+  // Check for ColorFunction first by functionName property (most reliable)
+  if (definition.functionName && definition.args) {
+    const functionName = definition.functionName;
+    const args = definition.args ? definition.args.join(', ') : '';
+    return `func.${functionName}(${args})`;
+  }
+  
+  // Check for ColorReference (has Symbol.for('ColorReference'))
+  if (definition.type === Symbol.for('ColorReference')) {
+    return `ref(${definition.key})`;
+  }
+  
+  // Check for ColorFunction (has Symbol.for('ColorFunction'))
+  if (definition.type === Symbol.for('ColorFunction')) {
+    const functionName = definition.functionName || 'unknown';
+    const args = definition.args ? definition.args.join(', ') : '';
+    return `func.${functionName}(${args})`;
+  }
+  
+  // Legacy string-based checks (for backwards compatibility)
+  if (definition.type === 'reference') return `ref(${definition.key})`;
+  if (definition.type === 'function') {
+    const functionName = definition.functionName || 'unknown';
+    const args = definition.args ? definition.args.join(', ') : '';
+    return `func.${functionName}(${args})`;
+  }
+  
+  return JSON.stringify(definition);
+}
 
 function renderPalettes(): void {
   const container = document.getElementById('palettes-container');
   if (!container) return;
 
   container.innerHTML = '';
-  router.getAllPalettes().forEach(({ name, config }) => {
+  
+  // Get all scopes from the design system
+  designSystem.getAllScopes().forEach((scope) => {
     const paletteDiv = document.createElement('div');
     paletteDiv.className = 'bg-white p-6 shadow-sm border border-gray-200 fade-in';
-    let titleHtml = `<h3 class="text-xl text-gray-800">${name}</h3>`;
-    if (config.extends) {
-      titleHtml += `<p class="text-sm text-gray-500">extends <span class="font-medium text-indigo-600">${config.extends}</span></p>`;
+    
+    // All scopes are scopes now, no more "palettes" distinction
+    let titleHtml = `<div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <h3 class="text-xl text-gray-800">${scope.name}</h3>
+        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Scope</span>
+      </div>
+      <button class="clone-scope-btn text-xs px-2 py-1 bg-purple-100 text-purple-700 hover:bg-purple-200 rounded" data-scope="${scope.name}">Clone as Theme</button>
+    </div>`;
+    
+    if (scope.options.extends) {
+      titleHtml += `<p class="text-sm text-gray-500">extends <span class="font-medium text-indigo-600">${scope.options.extends}</span></p>`;
+    }
+    
+    if (scope.options.description) {
+      titleHtml += `<p class="text-sm text-gray-600 italic">${scope.options.description}</p>`;
     }
 
-    const keys = router.getAllKeysForPalette(name);
+    const keys = engine.getAllTokensForScope(scope.name);
     let colorsHtml = '<div class="mt-4 space-y-3">';
     if (keys.length > 0) {
       keys.sort().forEach((key) => {
         const shortKey = key.split('.').slice(1).join('.');
-        const definition = router.getDefinitionForKey(key);
-        const resolvedValue = router.resolve(key) || '#transparent';
+        const definition = engine.getDefinition(key);
+        const resolvedValue = engine.resolve(key) || '#transparent';
+        
+        // Get token type indicator
+        const defType = getDefinitionType(definition);
+        const typeColor = defType === 'reference' ? 'text-blue-600' : 
+                         defType === 'function' ? 'text-green-600' : 'text-gray-600';
+        const typeIcon = defType === 'reference' ? '🔗' : 
+                        defType === 'function' ? '⚡' : '🎨';
+        
         colorsHtml += `
           <div class="flex items-center justify-between text-sm">
             <div class="flex items-center gap-3">
               <div class="color-swatch" style="background-color: ${resolvedValue};"></div>
               <div>
-                <p class="font-semibold text-gray-900">${shortKey}</p>
-                <p class="font-mono text-xs text-gray-500">${router.valueToString(definition)}</p>
+                <p class="font-semibold text-gray-900">${shortKey} <span class="${typeColor}" title="${defType}">${typeIcon}</span></p>
+                <p class="font-mono text-xs text-gray-500">${valueToString(definition)}</p>
               </div>
             </div>
             <div class="flex items-center gap-2">
@@ -108,21 +155,21 @@ function renderOutput(): void {
 
   try {
     if (format === 'svg') {
-      const svgRenderer = new SVGRenderer(router, {
-        showConnections: true,
-        gap: 20,
-        padding: 0.1,
-        fontSize: 10,
-        strokeWidth: 2,
-        dotRadius: 4,
-      });
-      const svgContent = svgRenderer.render();
-
-      outputContainer.innerHTML = `
-        <div class="bg-white p-4 h-96 overflow-auto flex items-center justify-center svg-container">
-          ${svgContent}
-        </div>
-      `;
+      try {
+        const svgRenderer = new SVGRenderer(designSystem);
+        const svgContent = svgRenderer.render();
+        outputContainer.innerHTML = `
+          <div class="bg-white p-4 h-96 overflow-auto flex items-center justify-center svg-container">
+            ${svgContent}
+          </div>
+        `;
+      } catch (e) {
+        outputContainer.innerHTML = `
+          <div class="bg-white p-4 h-96 overflow-auto flex items-center justify-center svg-container">
+            <p class="text-red-500">Error rendering SVG: ${(e as Error).message}</p>
+          </div>
+        `;
+      }
     } else {
       const codeEl = document.getElementById('output-code');
       if (!codeEl) {
@@ -133,9 +180,34 @@ function renderOutput(): void {
         `;
       }
 
-      const renderer = router.createRenderer(format as 'css-variables' | 'json');
+      // Create simple CSS variables renderer for now
+      let output = '';
+      if (format === 'css-variables') {
+        output = ':root {\n';
+        designSystem.getAllScopes().forEach(scope => {
+          const tokens = scope.allTokens();
+          Object.entries(tokens).forEach(([name, token]) => {
+            const fullKey = `${scope.name}.${name}`;
+            const value = engine.resolve(fullKey);
+            output += `  --${scope.name}-${name}: ${value};\n`;
+          });
+        });
+        output += '}';
+      } else if (format === 'json') {
+        const result: any = {};
+        designSystem.getAllScopes().forEach(scope => {
+          result[scope.name] = {};
+          const tokens = scope.allTokens();
+          Object.entries(tokens).forEach(([name, token]) => {
+            const fullKey = `${scope.name}.${name}`;
+            result[scope.name][name] = engine.resolve(fullKey);
+          });
+        });
+        output = JSON.stringify(result, null, 2);
+      }
+
       const newCodeEl = document.getElementById('output-code')!;
-      newCodeEl.textContent = renderer.render();
+      newCodeEl.textContent = output;
       newCodeEl.className = `language-${format} text-sm text-gray-200 font-mono`;
     }
   } catch (e) {
@@ -157,8 +229,17 @@ function renderColorDemo(): void {
   if (!container) return;
 
   try {
-    const renderer = router.createRenderer('css-variables');
-    const cssOutput = renderer.render();
+    // Create simple CSS variables output for demo
+    let cssOutput = ':root {\n';
+    designSystem.getAllScopes().forEach(scope => {
+      const tokens = scope.allTokens();
+      Object.entries(tokens).forEach(([name, token]) => {
+        const fullKey = `${scope.name}.${name}`;
+        const value = engine.resolve(fullKey);
+        cssOutput += `  --${scope.name}-${name}: ${value};\n`;
+      });
+    });
+    cssOutput += '}';
 
     let demoStyle = document.getElementById('demo-styles') as HTMLStyleElement;
     if (!demoStyle) {
@@ -196,23 +277,10 @@ function renderSVGVisualization(): void {
   if (!container) return;
 
   try {
-    const showConnections = (document.getElementById('show-connections') as HTMLInputElement)?.checked ?? true;
-
-    const svgRenderer = new SVGRenderer(router, {
-      showConnections,
-      gap: 25,
-      padding: 0.15,
-      fontSize: 10,
-      strokeWidth: 1.5,
-      dotRadius: 3,
-      lineHeight: 1.4,
-      widthPerLetter: 6,
-    });
-
+    const svgRenderer = new SVGRenderer(designSystem);
     const svgContent = svgRenderer.render();
-
     container.innerHTML = `
-      <div class="svg-container w-full h-full flex items-center justify-center">
+      <div class="svg-container w-full h-full">
         ${svgContent}
       </div>
     `;
@@ -233,12 +301,14 @@ document.getElementById('create-palette')?.addEventListener('click', () => {
   const nameInput = document.getElementById('palette-name') as HTMLInputElement;
   if (nameInput?.value) {
     try {
-      router.createPalette(nameInput.value);
+      // Create a new scope instead of a palette
+      designSystem.addScope(nameInput.value, { description: `Scope created via UI` });
       nameInput.value = '';
       renderPalettes();
       renderOutput();
       renderColorDemo();
       renderSVGVisualization();
+      logEvent(`<span class="text-green-600">Created scope:</span> ${nameInput.value}`);
     } catch (e) {
       logEvent(`<span class="text-red-500">ERROR:</span> ${(e as Error).message}`);
     }
@@ -251,13 +321,13 @@ document.getElementById('define-color')?.addEventListener('click', () => {
   if (!keyInput?.value || !valueInput?.value) return;
 
   try {
-    const colorDefinition = parseDemoInput(valueInput.value, router);
+    const colorDefinition = parseDemoInput(valueInput.value, engine);
     
     // Use define for new colors, set for existing ones
-    if (router.has(keyInput.value)) {
-      router.set(keyInput.value, colorDefinition);
+    if (engine.has(keyInput.value)) {
+      engine.set(keyInput.value, colorDefinition as any);
     } else {
-      router.define(keyInput.value, colorDefinition);
+      engine.define(keyInput.value, colorDefinition as any);
     }
 
     // Clear inputs after successful definition
@@ -295,6 +365,87 @@ document.getElementById('show-connections')?.addEventListener('change', () => {
   renderSVGVisualization();
 });
 
+// Design System API event handlers
+document.getElementById('create-scope')?.addEventListener('click', () => {
+  const nameInput = document.getElementById('scope-name') as HTMLInputElement;
+  const extendsInput = document.getElementById('scope-extends') as HTMLInputElement;
+  
+  if (nameInput?.value) {
+    try {
+      const options: { extends?: string; description?: string } = {
+        description: `${nameInput.value} scope created via Design System API`
+      };
+      
+      if (extendsInput?.value) {
+        options.extends = extendsInput.value;
+      }
+      
+      designSystem.addScope(nameInput.value, options);
+      nameInput.value = '';
+      extendsInput.value = '';
+      
+      renderPalettes();
+      renderOutput();
+      renderColorDemo();
+      renderSVGVisualization();
+      updateDesignSystemInfo();
+      
+      logEvent(`<span class="text-green-600">Created scope:</span> ${nameInput.value}${options.extends ? ` (extends ${options.extends})` : ''}`);
+    } catch (e) {
+      logEvent(`<span class="text-red-500">ERROR:</span> ${(e as Error).message}`);
+    }
+  }
+});
+
+// Function to update design system information display
+function updateDesignSystemInfo(): void {
+  const systemNameEl = document.getElementById('system-name');
+  const scopeCountEl = document.getElementById('scope-count');
+  const systemModeEl = document.getElementById('system-mode');
+  
+  if (systemNameEl) systemNameEl.textContent = designSystem.name;
+  if (scopeCountEl) scopeCountEl.textContent = designSystem.getAllScopes().length.toString();
+  if (systemModeEl) systemModeEl.textContent = engine.mode;
+}
+
+// Add event listeners for quick example buttons
+document.addEventListener('click', (e) => {
+  const target = e.target as HTMLElement;
+  if (target.classList.contains('quick-example-btn')) {
+    const value = target.dataset.value;
+    const valueInput = document.getElementById('color-value') as HTMLInputElement;
+    if (value && valueInput) {
+      valueInput.value = value;
+      logEvent(`<span class="text-blue-600">Example inserted:</span> ${value}`);
+    }
+  }
+  
+  // Handle clone scope button
+  if (target.classList.contains('clone-scope-btn')) {
+    const sourceScopeName = target.dataset.scope;
+    if (sourceScopeName) {
+      const themeName = `${sourceScopeName}-theme`;
+      try {
+        const themeScope = designSystem.addScope(themeName, { 
+          extends: sourceScopeName, 
+          description: `Theme variant of ${sourceScopeName} scope` 
+        });
+        
+        renderPalettes();
+        renderOutput();
+        renderColorDemo();
+        renderSVGVisualization();
+        updateDesignSystemInfo();
+        
+        logEvent(`<span class="text-purple-600">Created theme:</span> ${themeName} extending ${sourceScopeName}`);
+        logEvent(`💡 Try overriding some colors in the ${themeName} scope to see inheritance in action!`);
+      } catch (e) {
+        logEvent(`<span class="text-red-500">ERROR:</span> ${(e as Error).message}`);
+      }
+    }
+  }
+});
+
 document.getElementById('refresh-viz')?.addEventListener('click', () => {
   renderSVGVisualization();
 });
@@ -309,8 +460,8 @@ document.addEventListener('click', (e) => {
 });
 
 function editColor(key: string): void {
-  const definition = router.getDefinitionForKey(key);
-  const currentValue = router.getRawValue(definition);
+  const definition = engine.getDefinition(key);
+  const currentValue = valueToString(definition);
 
   const keyInput = document.getElementById('color-key') as HTMLInputElement;
   const valueInput = document.getElementById('color-value') as HTMLInputElement;
@@ -334,91 +485,75 @@ function editColor(key: string): void {
   logEvent(`Editing color '${key}' - current value: ${currentValue}`);
 }
 
-router.registerFunction(
-  'closestColor',
-  function (this: ColorRouter, target: string, paletteName: string, minDistance: number = 0): string {
-    const keys = this.getAllKeysForPalette(paletteName);
-    if (!keys.length) return '#transparent';
-
-    const targetColor = culori.parse(target);
-    if (!targetColor) return '#transparent';
-
-    let closestKey = '';
-    let closestDist = Infinity;
-
-    const differenceFunction = culori.differenceCiede2000(1, 1, 1);
-
-    for (const key of keys) {
-      const resolvedColor = this.resolve(key);
-      const color = culori.parse(resolvedColor);
-
-      if (!color) continue;
-
-      const dist = differenceFunction(targetColor, color);
-
-      if (dist < closestDist && dist >= minDistance) {
-        closestDist = dist;
-        closestKey = key;
-      }
-    }
-
-    const result = closestKey ? this.resolve(closestKey) : '';
-
-    return result;
-  }.bind(router),
-);
+// Note: Custom function registration would be done differently with TokenEngine
+// For now, we'll use the built-in functions only
 
 function setupInitialState(): void {
-  logEvent('Initializing ColorRouter demo...');
+  logEvent('🎨 Initializing Design System demo...');
 
-  router.createPalette('base');
-  router.define('base.light', '#ffffff');
-  router.define('base.dark', '#202126');
-  router.define('base.accent', '#1a0dab');
-  router.define('base.attention', router.func('relativeTo', 'base.accent', 'oklch', ['+0.35', '0.2', '+120']));
+  // Create base scope with core colors using the new Design System API
+  const base = designSystem.addScope('base', { description: 'Foundation colors for the design system' });
+  base.set('light', val.color.hex('#ffffff'));
+  base.set('dark', val.color.hex('#202126'));
+  base.set('accent', val.color.hex('#1a0dab'));
+  base.set('attention', func.color.relativeTo(engine, 'base.accent', 'oklch', ['+0.35', '0.2', '+120']));
 
-  router.createPalette('ramp');
-  router.define('ramp.0', router.ref('base.light'));
-  router.define('ramp.900', router.ref('base.dark'));
+  // Create color ramp scope
+  const ramp = designSystem.addScope('ramp', { description: 'Color scale from light to dark' });
+  ramp.set('0', ref('base.light'));
+  ramp.set('900', ref('base.dark'));
   for (let i = 8; i >= 1; i--) {
     const step = i * 0.1;
-    router.define(`ramp.${i}00`, router.func('colorMix', 'ramp.0', 'ramp.900', step, 'oklab'));
+    ramp.set(`${i}00`, func.color.mix(engine, 'ramp.0', 'ramp.900', step, 'oklab'));
   }
 
-  router.createPalette('demo');
-  router.define('demo.primary', router.ref('base.accent'));
-  router.define('demo.secondary', router.ref('base.attention'));
-  router.define('demo.lighter', router.func('lighten', 'demo.primary', 0.2));
-  router.define('demo.darker', router.func('darken', 'demo.primary', 0.2));
-  router.define('demo.contrast', router.func('bestContrastWith', 'demo.primary', 'ramp'));
-  router.define('demo.relative', router.func('relativeTo', 'demo.primary', 'r g b / 0.7'));
-  router.define('demo.minContrast', router.func('minContrastWith', 'demo.primary', 'ramp', 2.5));
-  router.define('demo.mixed', router.func('colorMix', 'demo.secondary', 'demo.minContrast', 0.7, 'lab'));
+  // Create demo scope with various color manipulations
+  const demo = designSystem.addScope('demo', { description: 'Demonstration colors showing different functions' });
+  demo.set('primary', ref('base.accent'));
+  demo.set('secondary', ref('base.attention'));
+  demo.set('lighter', func.color.lighten(engine, 'demo.primary', 0.2));
+  demo.set('darker', func.color.darken(engine, 'demo.primary', 0.2));
+  demo.set('contrast', func.color.bestContrastWith(engine, 'demo.primary', 'ramp'));
+  demo.set('relative', func.color.relativeTo(engine, 'demo.primary', 'r g b / 0.7'));
+  demo.set('minContrast', func.color.minContrastWith(engine, 'demo.primary', 'ramp', 2.5));
+  demo.set('mixed', func.color.mix(engine, 'demo.secondary', 'demo.minContrast', 0.7, 'lab'));
+  demo.set('furthest', func.color.furthestFrom(engine, 'base'));
 
-  router.createPalette('scale');
-  router.define('scale.0', router.ref('base.accent'));
-  router.define('scale.4', router.ref('base.attention'));
-  router.define('scale.1', router.func('colorMix', 'scale.0', 'scale.4', 0.25, 'oklab'));
-  router.define('scale.2', router.func('colorMix', 'scale.0', 'scale.4', 0.5, 'oklab'));
-  router.define('scale.3', router.func('colorMix', 'scale.0', 'scale.4', 0.75, 'oklab'));
+  // Create scale scope demonstrating color interpolation
+  const scale = designSystem.addScope('scale', { description: 'Color scale between two colors' });
+  scale.set('0', ref('base.accent'));
+  scale.set('4', ref('base.attention'));
+  scale.set('1', func.color.mix(engine, 'scale.0', 'scale.4', 0.25, 'oklab'));
+  scale.set('2', func.color.mix(engine, 'scale.0', 'scale.4', 0.5, 'oklab'));
+  scale.set('3', func.color.mix(engine, 'scale.0', 'scale.4', 0.75, 'oklab'));
 
-  router.define('demo.furthest', router.func('furthestFrom', 'base'));
+  // Create surface scope for UI components
+  const surface = designSystem.addScope('surface', { description: 'Surface and interaction colors' });
+  surface.set('background', ref('ramp.0'));
+  surface.set('onBackground', func.color.bestContrastWith(engine, 'surface.background', 'ramp'));
+  surface.set('interaction', ref('base.accent'));
+  surface.set('onInteraction', func.color.bestContrastWith(engine, 'surface.interaction', 'ramp'));
+  surface.set('line', func.color.minContrastWith(engine, 'surface.background', 'ramp', 1.7));
 
-  router.createPalette('surface');
-  router.define('surface.background', router.ref('ramp.0'));
-  router.define('surface.onBackground', router.func('bestContrastWith', 'surface.background', 'ramp'));
-  router.define('surface.interaction', router.ref('base.accent'));
-  router.define('surface.onInteraction', router.func('bestContrastWith', 'surface.interaction', 'ramp'));
-  router.define('surface.line', router.func('minContrastWith', 'surface.background', 'ramp', 1.7));
+  // Create a themed scope that extends base to show inheritance
+  const darkTheme = designSystem.addScope('dark', { 
+    extends: 'base', 
+    description: 'Dark theme variant extending base colors' 
+  });
+  darkTheme.set('light', val.color.hex('#1a1a1a'));  // Override light with dark value
+  darkTheme.set('dark', val.color.hex('#ffffff'));   // Override dark with light value
+  
+  designSystem.flush();
 
-  router.flush();
+  logEvent('✨ Design System initialized with scopes: base, ramp, demo, scale, surface, dark');
+  logEvent('🔧 Try creating a new scope or using token syntax like val.color.hex(), ref(), or func.color.*!');
 
-  console.log('Scale palette keys:', router.getAllKeysForPalette('scale'));
+  console.log('Scale scope keys:', engine.getAllTokensForScope('scale'));
   console.log(
-    'Scale palette colors:',
-    router.getAllKeysForPalette('scale').map((k) => ({ key: k, color: router.resolve(k) })),
+    'Scale scope colors:',
+    engine.getAllTokensForScope('scale').map((k) => ({ key: k, color: engine.resolve(k) })),
   );
-  console.log('demo.furthest resolves to:', router.resolve('demo.furthest'));
+  console.log('demo.furthest resolves to:', engine.resolve('demo.furthest'));
 
   logRendererComparison();
 
@@ -441,68 +576,84 @@ function setupInitialState(): void {
 function demonstrateDependencyGraph(): void {
   logEvent('🔗 DEPENDENCY GRAPH ANALYSIS:');
   
-  const depGraph = router.getDependencyGraph();
+  // TODO: Update dependency graph access for TokenEngine
+  // For now, we'll skip the detailed dependency analysis
+  logEvent('📊 Dependency graph analysis temporarily disabled during refactor');
   
-  // Show graph statistics
-  const allNodes = depGraph.getAllNodes();
-  logEvent(`📊 Graph contains ${allNodes.length} nodes`);
+  // Basic connectivity information from engine
+  const allTokens: string[] = [];
+  designSystem.getAllScopes().forEach(scope => {
+    const scopeTokens = engine.getAllTokensForScope(scope.name);
+    allTokens.push(...scopeTokens);
+  });
   
-  // Demonstrate traversal algorithms
-  const basePrimaryDependents = depGraph.dfsTraversal('base.accent', false);
-  logEvent(`🌳 DFS traversal from 'base.accent': ${basePrimaryDependents.join(' → ')}`);
+  logEvent(`📊 Total tokens: ${allTokens.length}`);
   
-  // Show shortest path between colors
-  const path = depGraph.findShortestPath('base.accent', 'surface.onInteraction', false);
-  if (path) {
-    logEvent(`🎯 Shortest path from 'base.accent' to 'surface.onInteraction': ${path.join(' → ')}`);
+  // Show some basic dependency information
+  try {
+    const baseDeps = engine.getDependencies('base.accent');
+    logEvent(`🔗 'base.accent' dependencies: ${baseDeps.length > 0 ? baseDeps.join(', ') : 'none'}`);
+    
+    const demoDeps = engine.getDependents('base.accent');
+    logEvent(`� Tokens depending on 'base.accent': ${demoDeps.length > 0 ? demoDeps.join(', ') : 'none'}`);
+  } catch (e) {
+    logEvent(`⚠️ Dependency analysis error: ${(e as Error).message}`);
   }
-  
-  // Check for cycles
-  const hasCycles = depGraph.hasCycles();
-  logEvent(`🔄 Circular dependencies detected: ${hasCycles ? 'YES ⚠️' : 'NO ✅'}`);
-  
-  // Show node with highest connectivity
-  const nodeConnectivity = allNodes.map(node => ({
-    node,
-    inDegree: depGraph.getNodeDegree(node, true),
-    outDegree: depGraph.getNodeDegree(node, false)
-  }));
-  
-  const mostConnected = nodeConnectivity.reduce((max, current) => 
-    (current.inDegree + current.outDegree) > (max.inDegree + max.outDegree) ? current : max
-  );
-  
-  logEvent(`🔗 Most connected node: '${mostConnected.node}' (in: ${mostConnected.inDegree}, out: ${mostConnected.outDegree})`);
 }
 
 function logRendererComparison(): void {
-  logEvent('🔧 RENDERER COMPARISON:');
+  logEvent('� RENDERER COMPARISON:');
 
-  const formats: ('css-variables' | 'json')[] = ['css-variables', 'json'];
-
-  formats.forEach((format) => {
-    const renderer = router.createRenderer(format);
-    const output = renderer.render();
-
-    const lines = output.split('\n').slice(0, 8).join('\n');
+  // Simple comparison with our basic renderer
+  try {
+    // CSS Variables format
+    let cssOutput = ':root {\n';
+    designSystem.getAllScopes().forEach(scope => {
+      const tokens = scope.allTokens();
+      Object.entries(tokens).forEach(([name, token]) => {
+        const fullKey = `${scope.name}.${name}`;
+        const value = engine.resolve(fullKey);
+        cssOutput += `  --${scope.name}-${name}: ${value};\n`;
+      });
+    });
+    cssOutput += '}';
+    
+    const cssLines = cssOutput.split('\n').slice(0, 8).join('\n');
     logEvent(
-      `<strong>${format.toUpperCase()}:</strong><br><code style="font-size: 11px; color: #666; white-space: pre-wrap;">${lines}...</code>`,
+      `<strong>CSS VARIABLES:</strong><br><code style="font-size: 11px; color: #666; white-space: pre-wrap;">${cssLines}...</code>`,
     );
-  });
+    
+    // JSON format
+    const result: any = {};
+    designSystem.getAllScopes().forEach(scope => {
+      result[scope.name] = {};
+      const tokens = scope.allTokens();
+      Object.entries(tokens).forEach(([name, token]) => {
+        const fullKey = `${scope.name}.${name}`;
+        result[scope.name][name] = engine.resolve(fullKey);
+      });
+    });
+    const jsonOutput = JSON.stringify(result, null, 2);
+    const jsonLines = jsonOutput.split('\n').slice(0, 8).join('\n');
+    logEvent(
+      `<strong>JSON:</strong><br><code style="font-size: 11px; color: #666; white-space: pre-wrap;">${jsonLines}...</code>`,
+    );
 
-  const cssRenderer = router.createRenderer('css-variables');
-  const cssOutput = cssRenderer.render();
-  const surfaceOnInteractionMatch = cssOutput.match(/--surface-onInteraction:\s*([^;]+);/);
-  if (surfaceOnInteractionMatch) {
-    logEvent(`🎯 SURFACE TEXT COLOR: --surface-onInteraction: ${surfaceOnInteractionMatch[1]}`);
-  } else {
-    logEvent(`⚠️  --surface-onInteraction not found in CSS output`);
+    // Try to get surface text color
+    try {
+      const surfaceOnInteraction = engine.resolve('surface.onInteraction');
+      logEvent(`🎯 SURFACE TEXT COLOR: --surface-onInteraction: ${surfaceOnInteraction}`);
+    } catch (e) {
+      logEvent(`⚠️ Could not resolve surface.onInteraction: ${(e as Error).message}`);
+    }
+  } catch (e) {
+    logEvent(`⚠️ Renderer comparison error: ${(e as Error).message}`);
   }
 }
 
-router.on('change', (e) => {
-  const event = e as CustomEvent<Array<{ key: string; oldValue?: string; newValue: string }>>;
-  event.detail.forEach((change) => {
+// Listen for changes in the design system
+designSystem.onChange((changes) => {
+  changes.forEach((change) => {
     const oldValue = change.oldValue || 'undefined';
     logEvent(
       `CHANGE: '${change.key}' from ${oldValue} to <span class="font-bold" style="color:${change.newValue}; text-shadow: 0 0 5px rgba(0,0,0,0.5);">${change.newValue}</span>`,
@@ -517,3 +668,58 @@ renderPalettes();
 renderOutput();
 renderColorDemo();
 renderSVGVisualization();
+updateDesignSystemInfo();
+
+// Demonstrate typed value tokens
+logEvent('🎨 Creating typed value tokens...');
+  
+// Create a tokens scope to demonstrate different value types
+const tokens = designSystem.addScope('tokens', { description: 'Mixed token types demonstration' });
+  
+// Color tokens (already working)
+tokens.set('brand-hex', val.color.hex('#3498db'));
+tokens.set('brand-lch', val.color.lch('65% 40 250'));
+tokens.set('brand-oklch', val.color.oklch('0.7 0.15 250'));
+  
+// Size tokens (future-ready)
+tokens.set('header-size', val.size.rem(2.5));
+tokens.set('body-size', val.size.px(16));
+tokens.set('icon-size', val.size.em(1.2));
+tokens.set('full-width', val.size.percent(100));
+tokens.set('viewport-width', val.size.vw(80));
+tokens.set('viewport-height', val.size.vh(50));
+  
+// Space tokens (future-ready)
+tokens.set('margin-sm', val.space.rem(0.5));
+tokens.set('margin-md', val.space.rem(1));
+tokens.set('margin-lg', val.space.rem(2));
+tokens.set('padding-base', val.space.px(16));
+  
+// Font tokens (future-ready)
+tokens.set('font-primary', val.font.family('Inter, system-ui, sans-serif'));
+tokens.set('font-mono', val.font.family('JetBrains Mono, monospace'));
+tokens.set('heading-size', val.font.size('2.5rem'));
+tokens.set('font-bold', val.font.weight('700'));
+tokens.set('font-italic', val.font.style('italic'));
+  
+logEvent('✅ Token types created:');
+logEvent('  • Color tokens: brand-hex, brand-lch, brand-oklch');
+logEvent('  • Size tokens: header-size, body-size, icon-size, full-width, viewport-width, viewport-height');
+logEvent('  • Space tokens: margin-sm/md/lg, padding-base');
+logEvent('  • Font tokens: font-primary/mono, heading-size, font-bold, font-italic');
+  
+// Log token details with types
+const allTokens = tokens.allTokens();
+Object.entries(allTokens).forEach(([name, token]) => {
+    if (token instanceof ColorValueToken) {
+      logEvent(`  🎨 ${name}: ${token.value} (color/${token.format})`);
+    } else if (token instanceof SizeValueToken) {
+      logEvent(`  📏 ${name}: ${token.value} (size/${token.unit})`);
+    } else if (token instanceof SpaceValueToken) {
+      logEvent(`  📐 ${name}: ${token.value} (space/${token.unit})`);
+    } else if (token instanceof FontValueToken) {
+      logEvent(`  🔤 ${name}: ${token.value} (font/${token.property})`);
+    } else {
+      logEvent(`  📄 ${name}: ${token.resolve({ resolve: (p) => p })}`);
+    }
+  });

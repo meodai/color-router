@@ -1,5 +1,5 @@
 import { parse, converter } from 'culori';
-import type { ColorRouter } from '../router';
+import type { TokenEngine } from '../engine/TokenEngine';
 import type { FunctionRenderer } from '../renderers';
 
 /**
@@ -27,31 +27,24 @@ function colorDistance(color1: string, color2: string): number {
 }
 
 /**
- * Finds the color within a specified palette that has the greatest average perceptual distance
- * to all other colors in the same palette. The distance is calculated in the CIELAB color space.
+ * Finds the color within a specified scope that has the greatest average perceptual distance
+ * to all other colors in the same scope. The distance is calculated in the CIELAB color space.
  *
- * The `this` context must be bound to a `ColorRouter` instance.
- *
- * @param this The ColorRouter instance.
- * @param paletteName The name of the palette to search within.
- * @returns The hex string of the color that is, on average, furthest from other colors in the palette.
- *          Returns black ("#000000") if the palette is not found, is empty, or contains no valid/resolvable colors.
+ * @param engine The TokenEngine instance to access tokens from.
+ * @param scopeName The name of the scope to search within.
+ * @returns The hex string of the color that is, on average, furthest from other colors in the scope.
+ *          Returns black ("#000000") if the scope is not found, is empty, or contains no valid/resolvable colors.
  */
-export function furthestFrom(this: ColorRouter, paletteName: string): string {
-  if (!this.getAllPalettes().find((p) => p.name === paletteName)) {
-    console.warn(`Palette "${paletteName}" not found, returning black`);
+export function furthestFrom(engine: TokenEngine, scopeName: string): string {
+  const scopeKeys = engine.getAllTokensForScope(scopeName);
+  if (scopeKeys.length === 0) {
+    console.warn(`Scope "${scopeName}" has no tokens, returning black`);
     return '#000000';
   }
 
-  const paletteKeys = this.getAllKeysForPalette(paletteName);
-  if (paletteKeys.length === 0) {
-    console.warn(`Palette "${paletteName}" has no colors, returning black`);
-    return '#000000';
-  }
-
-  if (paletteKeys.length === 1) {
+  if (scopeKeys.length === 1) {
     try {
-      const color = this.resolve(paletteKeys[0]);
+      const color = engine.resolve(scopeKeys[0]);
       return color !== 'invalid' ? color : '#000000';
     } catch (e) {
       return '#000000';
@@ -59,9 +52,9 @@ export function furthestFrom(this: ColorRouter, paletteName: string): string {
   }
 
   const validColors: { key: string; color: string }[] = [];
-  for (const key of paletteKeys) {
+  for (const key of scopeKeys) {
     try {
-      const color = this.resolve(key);
+      const color = engine.resolve(key);
       if (color && color !== 'invalid') {
         validColors.push({ key, color });
       }

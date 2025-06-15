@@ -1,5 +1,6 @@
-import { ColorRenderer, RenderFormat } from './ColorRenderer';
-import { ColorRouter } from '../router';
+import { TokenEngine } from '../engine/TokenEngine';
+import { DesignSystem } from '../system';
+import { ColorFunction, ColorReference } from '../types';
 import { tableView, createTableItemFromPalette, TableItem, TableViewOptions } from './TableViewRenderer';
 
 export interface SVGRenderOptions extends TableViewOptions {
@@ -24,15 +25,16 @@ export interface Connection {
 }
 
 /**
- * SVG Renderer for ColorRouter - creates circular table visualizations
+ * SVG Renderer for TokenEngine/DesignSystem - creates circular table visualizations
  */
-export class SVGRenderer extends ColorRenderer {
+export class SVGRenderer {
   #options: SVGRenderOptions;
-  #router: ColorRouter;
+  #engine: TokenEngine;
+  #designSystem: DesignSystem;
 
-  constructor(router: ColorRouter, options: SVGRenderOptions = {}) {
-    super(router, 'json' as RenderFormat);
-    this.#router = router;
+  constructor(designSystem: DesignSystem, options: SVGRenderOptions = {}) {
+    this.#designSystem = designSystem;
+    this.#engine = designSystem.getEngine();
     this.#options = {
       gap: 20,
       useMaxDiagonal: true,
@@ -46,10 +48,6 @@ export class SVGRenderer extends ColorRenderer {
       dotRadius: 5,
       ...options,
     };
-  }
-
-  private get router(): ColorRouter {
-    return this.#router;
   }
 
   #createSVG(w: number, h: number, content: string): string {
@@ -135,18 +133,18 @@ export class SVGRenderer extends ColorRenderer {
     return allConnectionPoints;
   }
 
-  #findConnections(router: ColorRouter, connectionPoints: Record<string, ConnectionPoint>): Connection[] {
+  #findConnections(connectionPoints: Record<string, ConnectionPoint>): Connection[] {
     const connections: Connection[] = [];
     const processedConnections = new Set<string>();
 
     Object.keys(connectionPoints).forEach((key) => {
       if (connectionPoints[key].isPaletteNode) return;
 
-      const visualDependencies = router.getVisualDependencies(key);
+      const visualDependencies = this.#getVisualDependencies(key);
       const fromPoint = connectionPoints[key];
 
       if (fromPoint) {
-        visualDependencies.forEach((depKey) => {
+        visualDependencies.forEach((depKey: string) => {
           const toPoint = connectionPoints[depKey];
           if (toPoint) {
             const connectionId = `${key}->${depKey}`;
@@ -160,6 +158,26 @@ export class SVGRenderer extends ColorRenderer {
     });
 
     return connections;
+  }
+
+  #getVisualDependencies(key: string): Set<string> {
+    const definition = this.#engine.getDefinition(key);
+    if (definition instanceof ColorFunction) {
+      return new Set(definition.dependencies);
+    }
+    if (definition instanceof ColorReference) {
+      return new Set([definition.key]);
+    }
+    return new Set<string>();
+  }
+
+  #getDefinitionType(key: string): 'value' | 'reference' | 'function' {
+    const definition = this.#engine.getDefinition(key);
+    if (!definition) return 'value';
+    if (typeof definition === 'string') return 'value';
+    if (definition instanceof ColorReference) return 'reference';
+    if (definition instanceof ColorFunction) return 'function';
+    return 'value';
   }
 
   #generateConnectionPaths(connections: Connection[]): string {
@@ -189,7 +207,7 @@ export class SVGRenderer extends ColorRenderer {
           to.x + (to.isLeft ? amp : -amp)
         } ${to.y}, ${to.x} ${to.y}`;
 
-        const fromDefType = this.#router.getDefinitionType(from.key);
+        const fromDefType = this.#getDefinitionType(from.key);
         const strokeDasharray = fromDefType === 'function' ? '5,5' : 'none';
 
         return `<path d="${path}" stroke="${from.color}" stroke-width="${strokeWidth}" fill="none" data-color="${from.color}" stroke-dasharray="${strokeDasharray}" />`;
@@ -229,32 +247,31 @@ export class SVGRenderer extends ColorRenderer {
   }
 
   render(): string {
-    const router = this.router;
-    const palettes = router.getAllPalettes();
+    const scopes = this.#designSystem.getAllScopes();
 
-    if (palettes.length === 0) {
+    if (scopes.length === 0) {
       return this.#createSVG(
         200,
         100,
-        '<text x="100" y="50" text-anchor="middle" font-family="monospace">No palettes defined</text>',
+        '<text x="100" y="50" text-anchor="middle" font-family="monospace">No scopes defined</text>',
       );
     }
 
-    const tableItems: TableItem[] = palettes.map(({ name }: { name: string }) => {
-      const keys = router.getAllKeysForPalette(name);
+    const tableItems: TableItem[] = scopes.map((scope) => {
+      const tokens = scope.allTokens();
       const colors: Record<string, string> = {};
 
-      keys.forEach((key: string) => {
-        const shortKey = key.split('.').slice(1).join('.');
-        colors[shortKey] = router.resolve(key);
+      Object.keys(tokens).forEach((name: string) => {
+        const fullKey = `${scope.name}.${name}`;
+        colors[name] = this.#engine.resolve(fullKey);
       });
 
-      return createTableItemFromPalette(name, colors, this.#options);
+      return createTableItemFromPalette(scope.name, colors, this.#options);
     });
 
     const table = tableView(tableItems, this.#options);
     const connectionPoints = this.#extractConnectionPoints(table.tableItems, table.tableBoundingRect);
-    const connections = this.#findConnections(router, connectionPoints);
+    const connections = this.#findConnections(connectionPoints);
     const connectionPaths = this.#generateConnectionPaths(connections);
     const dots = this.#generateDots(connectionPoints);
     const tables = table.tableItems.map((item) => this.#createTableGroup(item, item.left!, item.top!)).join('');

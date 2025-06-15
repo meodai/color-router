@@ -1,19 +1,19 @@
 import { parse, differenceEuclidean } from 'culori';
-import type { ColorRouter } from '../router';
+import type { TokenEngine } from '../engine/TokenEngine';
 import type { FunctionRenderer } from '../renderers';
 
 /**
- * Finds the color in a specified palette that is perceptually closest to a target color.
- * @param this The ColorRouter instance.
+ * Finds the color in a specified scope that is perceptually closest to a target color.
+ * @param engine The TokenEngine instance to access tokens from.
  * @param targetColorValue The target color (e.g., 'red', '#FF0000').
- * @param paletteName The name of the palette to search within.
+ * @param scopeName The name of the scope to search within.
  * @param _options Optional additional parameters.
- * @returns The hex string of the closest color found in the palette, or transparent black if errors occur.
+ * @returns The hex string of the closest color found in the scope, or transparent black if errors occur.
  */
 export function closestColor(
-  this: ColorRouter,
+  engine: TokenEngine,
   targetColorValue: string,
-  paletteName: string,
+  scopeName: string,
   ..._options: any[]
 ): string {
   if (typeof targetColorValue !== 'string') {
@@ -21,8 +21,8 @@ export function closestColor(
     return '#00000000';
   }
 
-  if (typeof paletteName !== 'string') {
-    console.error('[closestColor] paletteName must be a string.');
+  if (typeof scopeName !== 'string') {
+    console.error('[closestColor] scopeName must be a string.');
     return '#00000000';
   }
 
@@ -32,15 +32,15 @@ export function closestColor(
     return '#00000000';
   }
 
-  let paletteKeys: string[];
+  let scopeKeys: string[];
   try {
-    paletteKeys = this.getAllKeysForPalette(paletteName);
+    scopeKeys = engine.getAllTokensForScope(scopeName);
   } catch (error) {
-    console.error(`[closestColor] Error getting keys for palette '${paletteName}':`, error);
+    console.error(`[closestColor] Error getting keys for scope '${scopeName}':`, error);
     return '#00000000';
   }
 
-  if (!paletteKeys || paletteKeys.length === 0) {
+  if (!scopeKeys || scopeKeys.length === 0) {
     return '#00000000';
   }
 
@@ -49,26 +49,26 @@ export function closestColor(
 
   const differenceFn = differenceEuclidean('rgb');
 
-  for (const key of paletteKeys) {
-    const paletteColorValue = this.resolve(key);
+  for (const key of scopeKeys) {
+    const scopeColorValue = engine.resolve(key);
 
-    if (!paletteColorValue || paletteColorValue === 'invalid') {
+    if (!scopeColorValue || scopeColorValue === 'invalid') {
       continue;
     }
 
-    const paletteColorParsed = parse(paletteColorValue);
-    if (!paletteColorParsed) {
+    const scopeColorParsed = parse(scopeColorValue);
+    if (!scopeColorParsed) {
       continue;
     }
 
     try {
-      const difference = differenceFn(targetColorParsed, paletteColorParsed);
+      const difference = differenceFn(targetColorParsed, scopeColorParsed);
       if (difference < minDifference) {
         minDifference = difference;
-        closestColorHex = paletteColorValue;
+        closestColorHex = scopeColorValue;
       }
     } catch (e) {
-      // console.error(`[closestColor] Error calculating difference for ${targetColorValue} and ${paletteColorValue}:`, e);
+      // console.error(`[closestColor] Error calculating difference for ${targetColorValue} and ${scopeColorValue}:`, e);
     }
   }
 

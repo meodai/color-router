@@ -97,9 +97,9 @@ export class ColorRouter {
     }
 
     const finalResolutionDependencies = Array.from(resolutionDependencySet);
-    const finalVisualDependenciesArray = Array.from(visualDependencySet);
+    // Note: visualDependencies removed - now just using dependencies for both purposes
 
-    return new ColorFunction(implementation, args, finalResolutionDependencies, finalVisualDependenciesArray);
+    return new ColorFunction(implementation, args, finalResolutionDependencies);
   }
 
   createPalette(
@@ -418,7 +418,7 @@ export class ColorRouter {
     const definition = this.#getDefinition(key);
 
     if (definition instanceof ColorFunction) {
-      return new Set(definition.visualDependencies);
+      return new Set(definition.dependencies);
     }
     if (definition instanceof ColorReference) {
       return new Set([definition.key]);
